@@ -92,9 +92,17 @@ class _ChatListState extends State<ChatList>
       GlobalKey<PatchedSliverAnimatedListState>();
   late List<Object> _oldData = List.from(widget.items);
 
+  final GlobalKey _key = GlobalKey();
+  double _height = 0;
+
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _height = _key.currentContext!.size!.height;
+      print('CustomScrollView height: $_height');
+    });
 
     didUpdateWidget(widget);
   }
@@ -155,84 +163,131 @@ class _ChatListState extends State<ChatList>
 
           return false;
         },
-        child: CustomScrollView(
-          controller: widget.scrollController,
-          keyboardDismissBehavior: widget.keyboardDismissBehavior,
-          physics: widget.scrollPhysics,
-          reverse: true,
-          slivers: [
-            if (widget.bottomWidget != null)
-              SliverToBoxAdapter(child: widget.bottomWidget),
-            SliverPadding(
-              padding: const EdgeInsets.only(bottom: 4),
-              sliver: SliverToBoxAdapter(
-                child: widget.typingIndicatorOptions?.customTypingIndicator ??
-                    TypingIndicator(
-                      bubbleAlignment: widget.bubbleRtlAlignment,
-                      options: widget.typingIndicatorOptions!,
-                      showIndicator: (widget
-                              .typingIndicatorOptions!.typingUsers.isNotEmpty &&
-                          !_indicatorOnScrollStatus),
-                    ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.only(bottom: 4),
-              sliver: PatchedSliverAnimatedList(
-                findChildIndexCallback: (Key key) {
-                  if (key is ValueKey<Object>) {
-                    final newIndex = widget.items.indexWhere(
-                      (v) => _valueKeyForItem(v) == key,
-                    );
-                    if (newIndex != -1) {
-                      return newIndex;
-                    }
-                  }
-                  return null;
-                },
-                initialItemCount: widget.items.length,
-                key: _listKey,
-                itemBuilder: (_, index, animation) =>
-                    _newMessageBuilder(index, animation),
-              ),
-            ),
-            SliverPadding(
-              padding: EdgeInsets.only(
-                top: 16 +
-                    (widget.useTopSafeAreaInset
-                        ? MediaQuery.of(context).padding.top
-                        : 0),
-              ),
-              sliver: SliverToBoxAdapter(
-                child: SizeTransition(
-                  axisAlignment: 1,
-                  sizeFactor: _animation,
-                  child: Center(
-                    child: Container(
-                      alignment: Alignment.center,
-                      height: 32,
-                      width: 32,
-                      child: SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: _isNextPageLoading
-                            ? CircularProgressIndicator(
-                                backgroundColor: Colors.transparent,
-                                strokeWidth: 1.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  InheritedChatTheme.of(context)
-                                      .theme
-                                      .primaryColor,
+        child: SingleChildScrollView(
+          child: SizedBox(
+            height: 1500,
+            child: Stack(
+              key: _key,
+              children: [
+                Positioned(
+                  top: 0,
+                  child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    child: CustomScrollView(
+                      shrinkWrap: true,
+                      controller: widget.scrollController,
+                      keyboardDismissBehavior: widget.keyboardDismissBehavior,
+                      physics: widget.scrollPhysics,
+                      reverse: true,
+                      slivers: [
+                        if (widget.bottomWidget != null)
+                          SliverToBoxAdapter(child: widget.bottomWidget),
+                        SliverPadding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          sliver: SliverToBoxAdapter(
+                            child: widget.typingIndicatorOptions
+                                    ?.customTypingIndicator ??
+                                TypingIndicator(
+                                  bubbleAlignment: widget.bubbleRtlAlignment,
+                                  options: widget.typingIndicatorOptions!,
+                                  showIndicator: (widget.typingIndicatorOptions!
+                                          .typingUsers.isNotEmpty &&
+                                      !_indicatorOnScrollStatus),
                                 ),
-                              )
-                            : null,
-                      ),
+                          ),
+                        ),
+                        // SliverPadding(
+                        //   padding: const EdgeInsets.only(bottom: 4),
+                        //   sliver: SliverToBoxAdapter(
+                        //     child: widget.itemBuilder(_oldData[6], 5),
+                        //   ),
+                        // ),
+                        SliverPadding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          sliver: PatchedSliverAnimatedList(
+                            findChildIndexCallback: (Key key) {
+                              if (key is ValueKey<Object>) {
+                                final newIndex = widget.items.indexWhere(
+                                  (v) => _valueKeyForItem(v) == key,
+                                );
+                                if (newIndex != -1) {
+                                  return newIndex;
+                                }
+                              }
+                              return null;
+                            },
+                            initialItemCount: widget.items.length,
+                            key: _listKey,
+                            itemBuilder: (_, index, animation) =>
+                                _newMessageBuilder(index, animation),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: EdgeInsets.only(
+                            top: 16 +
+                                (widget.useTopSafeAreaInset
+                                    ? MediaQuery.of(context).padding.top
+                                    : 0),
+                          ),
+                          sliver: SliverToBoxAdapter(
+                            child: SizeTransition(
+                              axisAlignment: 1,
+                              sizeFactor: _animation,
+                              child: Center(
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  height: 32,
+                                  width: 32,
+                                  child: SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: _isNextPageLoading
+                                        ? CircularProgressIndicator(
+                                            backgroundColor: Colors.transparent,
+                                            strokeWidth: 1.5,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                              InheritedChatTheme.of(context)
+                                                  .theme
+                                                  .primaryColor,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
+                // Container(
+                //   height: 700,
+                //   child: Stack(
+                //     children: [
+                //       Positioned(
+                //         top: 200,
+                //         left: 20,
+                //         height: 250,
+                //         width: 250,
+                //         child: Container(
+                //           width: 150,
+                //           height: 150,
+                //           color: Colors.green[300],
+                //           child: const Text(
+                //             '重ねるウィジェット',
+                //             style: TextStyle(color: Colors.white, fontSize: 20),
+                //           ),
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
+              ],
             ),
-          ],
+          ),
         ),
       );
 
