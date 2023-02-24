@@ -50,12 +50,12 @@ class PenButton extends StatelessWidget {
                   ),
                 )
               : InheritedChatTheme.of(context).theme.attachmentButtonIcon ??
-                  Image.asset('icon-pen.png'),
-          // Image.asset(
-          //   'assets/icon-document.png',
-          //   color: InheritedChatTheme.of(context).theme.inputTextColor,
-          //   package: 'flutter_chat_ui',
-          // ),
+                  //Image.asset('icon-pen.png'),
+                  Image.asset(
+                    'assets/icon-document.png',
+                    color: InheritedChatTheme.of(context).theme.inputTextColor,
+                    package: 'flutter_chat_ui',
+                  ),
           // Image(
           //   image: AssetImage('assets/icon-document.png'),
           // ),

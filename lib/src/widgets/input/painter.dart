@@ -13,12 +13,15 @@ import 'package:flutter/widgets.dart' hide Image;
 class Painter extends StatefulWidget {
   final PainterController painterController;
   final VoidCallback? onPanStart;
+  final VoidCallback? onPanEnd;
 
   /// Creates an instance of this widget that operates on top of the supplied [PainterController].
   /// 指定した [PainterController] の上に動作するこのウィジェットのインスタンスを作成します。
-  Painter(PainterController painterController, VoidCallback? onPanStart)
+  Painter(PainterController painterController, VoidCallback? onPanStart,
+      VoidCallback? onPanEnd)
       : this.painterController = painterController,
         this.onPanStart = onPanStart,
+        this.onPanEnd = onPanEnd,
         super(key: new ValueKey<PainterController>(painterController));
 
   //final String test;
@@ -84,6 +87,7 @@ class _PainterState extends State<Painter> {
 
   void _onPanEnd(DragEndDetails end) {
     widget.painterController._pathHistory.endCurrent();
+    widget.onPanEnd!();
     widget.painterController._notifyListeners();
   }
 }
@@ -122,7 +126,7 @@ class _PathHistory {
         _backgroundPaint = new Paint()..blendMode = BlendMode.dstOver,
         currentPaint = new Paint()
           ..color = Colors.black
-          ..strokeWidth = 2.0
+          ..strokeWidth = 4.0
           ..strokeCap = StrokeCap.round
           ..style = PaintingStyle.fill;
 
