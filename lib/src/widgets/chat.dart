@@ -229,7 +229,7 @@ class Chat extends StatefulWidget {
   /// See [Input.onAttachmentPressed].
   final VoidCallback? onAttachmentPressed;
 
-  final VoidCallback? onPenPressed;
+  final void Function([List<dynamic>])? onPenPressed;
 
   /// See [Message.onAvatarTap].
   final void Function(types.User)? onAvatarTap;
@@ -341,6 +341,7 @@ class ChatState extends State<Chat> {
 
   List<Object> _chatMessages = [];
   List<PreviewImage> _gallery = [];
+  List<dynamic> _painter = [];
   PageController? _galleryPageController;
   bool _hadScrolledToUnreadOnOpen = false;
   bool _isImageViewVisible = false;
@@ -354,6 +355,7 @@ class ChatState extends State<Chat> {
   late final AutoScrollController _scrollController;
 
   PainterController _controller = _newController();
+  PainterController _loadPaintController = _newController();
 
   static PainterController _newController() {
     PainterController controller = new PainterController();
@@ -393,6 +395,7 @@ class ChatState extends State<Chat> {
 
       _chatMessages = result[0] as List<Object>;
       _gallery = result[1] as List<PreviewImage>;
+      _painter = result[2] as List<dynamic>;
 
       _refreshAutoScrollMapping();
       _maybeScrollToFirstUnread();
@@ -428,14 +431,46 @@ class ChatState extends State<Chat> {
     setState(() {
       _controller.isEmpty = false;
       isTouching = true;
+//TODO:ここで制御？
     });
   }
 
   void _onPanEnd() {
     setState(() {
       isTouching = false;
+//TODO:ここで制御？
+      // _controller.clear();
+      _controller.finish();
     });
   }
+
+  // お絵描き用Painter
+  Positioned _displayPainter() => Positioned(
+        // TODO:位置サイズどうする？.
+        top: 0,
+        left: 0,
+        width: 500,
+        height: 1000,
+        child: Painter(
+          painterController: _controller,
+          onPanStart: _onPanStart,
+          onPanEnd: _onPanEnd,
+          // isLoadOnly: true,
+        ),
+      );
+
+  // お絵描き表示用Painter
+  Positioned _displayLoadPainter() => Positioned(
+        // TODO:位置サイズどうする？.
+        top: 0,
+        left: 0,
+        height: 1000,
+        width: 2000,
+        child: Painter(
+          painterController: _loadPaintController.fromList(_painter),
+          isLoadOnly: true,
+        ),
+      );
 
   bool _isChange = false;
   bool _showIndicator = false;
@@ -484,6 +519,8 @@ class ChatState extends State<Chat> {
                                       index,
                                     ),
                                     items: _chatMessages,
+                                    painter: _displayPainter(),
+                                    loadPainter: _displayLoadPainter(),
                                     keyboardDismissBehavior:
                                         widget.keyboardDismissBehavior,
                                     onEndReached: widget.onEndReached,
@@ -657,10 +694,13 @@ class ChatState extends State<Chat> {
                         //     ),
                         //   ),
                         // ),
-                        Center(
-                          child:
-                              new Painter(_controller, _onPanStart, _onPanEnd),
-                        ),
+                        // Center(
+                        //   child: Painter(
+                        //     painterController: _controller,
+                        //     onPanStart: _onPanStart,
+                        //     onPanEnd: _onPanEnd,
+                        //   ),
+                        // ),
                         StatefulBuilder(builder:
                             (BuildContext context, StateSetter setState) {
                           return RotatedBox(
@@ -709,7 +749,8 @@ class ChatState extends State<Chat> {
                                       ),
                                       foregroundColor:
                                           MaterialStateProperty.all<Color>(
-                                              Colors.white),
+                                        Colors.white,
+                                      ),
                                     ),
                                     onPressed: () {
                                       _controller.clear();
@@ -802,13 +843,15 @@ class ChatState extends State<Chat> {
                                       ),
                                       foregroundColor:
                                           MaterialStateProperty.all<Color>(
-                                              Colors.white),
+                                        Colors.white,
+                                      ),
                                     ),
                                     onPressed: () {
                                       //
                                       _onPenPressed();
                                       _show();
-                                      widget.onPenPressed?.call();
+                                      widget.onPenPressed
+                                          ?.call(_controller.toList());
                                     },
                                     child: Text(
                                       '完了',
@@ -853,7 +896,8 @@ class ChatState extends State<Chat> {
                                             _emptySelectedBorder = index;
                                           });
                                           print(
-                                              'showSelectedBorder: $_emptySelectedBorder');
+                                            'showSelectedBorder: $_emptySelectedBorder',
+                                          );
                                           // if (controlProvider.isPainting) {
                                           //   paintingProvider.lineColor = index;
                                           // } else {
@@ -862,7 +906,8 @@ class ChatState extends State<Chat> {
                                         },
                                         child: Padding(
                                           padding: EdgeInsets.symmetric(
-                                              horizontal: 8),
+                                            horizontal: 8,
+                                          ),
                                           child: Container(
                                             // shadows: [
                                             //   BoxShadow(
@@ -889,7 +934,8 @@ class ChatState extends State<Chat> {
                                                       ? returnBorder(index)
                                                       : Border.all(
                                                           color: Colors.white,
-                                                          width: 2),
+                                                          width: 2,
+                                                        ),
                                             ),
                                           ),
                                         ),

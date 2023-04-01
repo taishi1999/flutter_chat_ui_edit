@@ -78,10 +78,15 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  void _handlePenPressed() {
+  void _handlePenPressed([List<dynamic>? saveValue]) {
     setState(() {
       _isAppBarVisible = !_isAppBarVisible;
     });
+    if (saveValue != null) {
+      for (var i = 0; i < saveValue.length; i++) {
+        print(saveValue[i]);
+      }
+    }
 
     print('penが押されたよーー _isAppBarVisible: $_isAppBarVisible');
     //return PenPress;

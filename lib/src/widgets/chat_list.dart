@@ -18,6 +18,8 @@ class ChatList extends StatefulWidget {
     this.isLastPage,
     required this.itemBuilder,
     required this.items,
+    required this.painter,
+    required this.loadPainter,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
     this.onEndReached,
     this.onEndReachedThreshold,
@@ -44,6 +46,9 @@ class ChatList extends StatefulWidget {
 
   /// Items to build.
   final List<Object> items;
+
+  final Positioned painter;
+  final Positioned loadPainter;
 
   /// Used for pagination (infinite scroll). Called when user scrolls
   /// to the very end of the list (minus [onEndReachedThreshold]).
@@ -263,25 +268,30 @@ class _ChatListState extends State<ChatList>
                     ),
                   ),
                 ),
+                widget.loadPainter,
+                widget.painter,
                 // Container(
-                //   height: 700,
+                //   // height: 1000,
                 //   child: Stack(
+                //     fit: StackFit.passthrough,
                 //     children: [
-                //       Positioned(
-                //         top: 200,
-                //         left: 20,
-                //         height: 250,
-                //         width: 250,
-                //         child: Container(
-                //           width: 150,
-                //           height: 150,
-                //           color: Colors.green[300],
-                //           child: const Text(
-                //             '重ねるウィジェット',
-                //             style: TextStyle(color: Colors.white, fontSize: 20),
-                //           ),
-                //         ),
-                //       ),
+                //       widget.loadPainter,
+                //       // widget.painter,
+                //       // Positioned(
+                //       //   top: 200,
+                //       //   left: 20,
+                //       //   height: 250,
+                //       //   width: 250,
+                //       // child: Container(
+                //       //   width: 150,
+                //       //   height: 150,
+                //       //   color: Colors.green[300],
+                //       //   child: const Text(
+                //       //     '重ねるウィジェット',
+                //       //     style: TextStyle(color: Colors.white, fontSize: 20),
+                //       //   ),
+                //       // ),
+                //       // ),
                 //     ],
                 //   ),
                 // ),

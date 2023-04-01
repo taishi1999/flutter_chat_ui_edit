@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:flutter_chat_ui/src/widgets/input/painter.dart';
 import 'package:intl/intl.dart';
 
 import 'models/date_header.dart';
@@ -11,6 +13,12 @@ import 'models/emoji_enlargement_behavior.dart';
 import 'models/message_spacer.dart';
 import 'models/preview_image.dart';
 import 'models/unread_header_data.dart';
+
+// TODO:type化.
+// Message.Metadata 使用時の一番親階層のキー.
+enum MessageMetadata {
+  painter;
+}
 
 /// Returns text representation of a provided bytes value (e.g. 1kB, 1GB).
 String formatBytes(int size, [int fractionDigits = 2]) {
@@ -103,7 +111,7 @@ final isMobile = defaultTargetPlatform == TargetPlatform.android ||
 /// Parses provided messages to chat messages (with headers and spacers)
 /// and returns them with a gallery.
 List<Object> calculateChatMessages(
-  List<types.Message> messages,
+  List<types.Message> messagesOrigin,
   types.User user, {
   String Function(DateTime)? customDateHeaderText,
   DateFormat? dateFormat,
@@ -117,8 +125,25 @@ List<Object> calculateChatMessages(
 }) {
   final chatMessages = <Object>[];
   final gallery = <PreviewImage>[];
+  final painter = <dynamic>[];
 
   var shouldShowName = false;
+
+  // オリジナルのタイプの代わりにtextタイプを仮で使用.
+  // isFirst・isLast 等ずれないようにループの前にメッセージとして表示しないタイプの処理を行う.
+  // TODO:type化.
+  final messages = <types.Message>[]; // ループ用.
+  for (var msg in messagesOrigin) {
+    if (msg.type == types.MessageType.text && msg.metadata != null) {
+      // お絵描き.
+      if (msg.metadata!.containsKey(MessageMetadata.painter.name) &&
+          msg.metadata![MessageMetadata.painter.name] != null) {
+        painter.add(msg.metadata![MessageMetadata.painter.name]);
+        continue;
+      }
+    }
+    messages.add(msg);
+  }
 
   for (var i = messages.length - 1; i >= 0; i--) {
     final isFirst = i == messages.length - 1;
@@ -272,5 +297,5 @@ List<Object> calculateChatMessages(
     }
   }
 
-  return [chatMessages, gallery];
+  return [chatMessages, gallery, painter];
 }
