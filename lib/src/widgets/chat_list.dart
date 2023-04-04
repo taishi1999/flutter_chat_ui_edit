@@ -8,6 +8,8 @@ import 'state/inherited_chat_theme.dart';
 import 'state/inherited_user.dart';
 import 'typing_indicator.dart';
 
+//import 'message/MovableWidget.dart';
+
 /// Animated list that handles automatic animations and pagination.
 class ChatList extends StatefulWidget {
   /// Creates a chat list widget.
@@ -18,6 +20,11 @@ class ChatList extends StatefulWidget {
     this.isLastPage,
     required this.itemBuilder,
     required this.items,
+    required this.widgetList,
+    required this.isScrollable,
+    //required this.screenText,
+    required this.onTap,
+    required this.onDoubleTap,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
     this.onEndReached,
     this.onEndReachedThreshold,
@@ -39,11 +46,21 @@ class ChatList extends StatefulWidget {
   /// pagination will not be triggered.
   final bool? isLastPage;
 
+  final bool isScrollable;
+
   /// Item builder.
   final Widget Function(Object, int? index) itemBuilder;
 
   /// Items to build.
   final List<Object> items;
+
+  final List<Widget> widgetList;
+
+  //final String screenText;
+
+  final VoidCallback onTap;
+
+  final Function(double) onDoubleTap;
 
   /// Used for pagination (infinite scroll). Called when user scrolls
   /// to the very end of the list (minus [onEndReachedThreshold]).
@@ -92,8 +109,19 @@ class _ChatListState extends State<ChatList>
       GlobalKey<PatchedSliverAnimatedListState>();
   late List<Object> _oldData = List.from(widget.items);
 
+  final _scrollController = ScrollController();
+
+  bool isScrollable = true;
+
   final GlobalKey _key = GlobalKey();
   double _height = 0;
+  //Offset _offset = Offset.zero;
+  //Offset center = Offset(0, 0);
+  //double _scrollPosition = 0;
+  //List<Widget> widgetList = [];
+
+  //late String _screenText = '';
+  //GlobalKey containerKey = GlobalKey();
 
   @override
   void initState() {
@@ -110,7 +138,12 @@ class _ChatListState extends State<ChatList>
   @override
   void didUpdateWidget(covariant ChatList oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.widgetList.length > 0) {
+      var list = widget.widgetList[widget.widgetList.length - 1];
 
+      print('didupdate, list[0]: $list');
+    }
+    isScrollable = widget.isScrollable;
     _calculateDiffs(oldWidget.items);
   }
 
@@ -120,172 +153,197 @@ class _ChatListState extends State<ChatList>
     super.dispose();
   }
 
+  Widget _buildStack() {
+    return Stack(
+      children: widget.widgetList,
+    );
+  }
+
   @override
-  Widget build(BuildContext context) =>
-      NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.metrics.pixels > 10.0 && !_indicatorOnScrollStatus) {
-            setState(() {
-              _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
-            });
-          } else if (notification.metrics.pixels == 0.0 &&
-              _indicatorOnScrollStatus) {
-            setState(() {
-              _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
-            });
-          }
+  Widget build(BuildContext context) => GestureDetector(
+        onDoubleTap: () {
+          var s = _scrollController.position.pixels;
+          print('s: $s');
+          widget.onDoubleTap(s);
+        },
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.pixels > 10.0 &&
+                !_indicatorOnScrollStatus) {
+              setState(() {
+                _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
+              });
+            } else if (notification.metrics.pixels == 0.0 &&
+                _indicatorOnScrollStatus) {
+              setState(() {
+                _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
+              });
+            }
 
-          if (widget.onEndReached == null || widget.isLastPage == true) {
-            return false;
-          }
+            if (widget.onEndReached == null || widget.isLastPage == true) {
+              return false;
+            }
 
-          if (notification.metrics.pixels >=
-              (notification.metrics.maxScrollExtent *
-                  (widget.onEndReachedThreshold ?? 0.75))) {
-            if (widget.items.isEmpty || _isNextPageLoading) return false;
+            if (notification.metrics.pixels >=
+                (notification.metrics.maxScrollExtent *
+                    (widget.onEndReachedThreshold ?? 0.75))) {
+              if (widget.items.isEmpty || _isNextPageLoading) return false;
 
-            _controller.duration = Duration.zero;
-            _controller.forward();
-
-            setState(() {
-              _isNextPageLoading = true;
-            });
-
-            widget.onEndReached!().whenComplete(() {
-              _controller.duration = const Duration(milliseconds: 300);
-              _controller.reverse();
+              _controller.duration = Duration.zero;
+              _controller.forward();
 
               setState(() {
-                _isNextPageLoading = false;
+                _isNextPageLoading = true;
               });
-            });
-          }
 
-          return false;
-        },
-        child: SingleChildScrollView(
-          child: SizedBox(
-            height: 1500,
-            child: Stack(
-              key: _key,
-              children: [
-                Positioned(
-                  top: 0,
-                  child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    child: CustomScrollView(
-                      shrinkWrap: true,
-                      controller: widget.scrollController,
-                      keyboardDismissBehavior: widget.keyboardDismissBehavior,
-                      physics: widget.scrollPhysics,
-                      reverse: true,
-                      slivers: [
-                        if (widget.bottomWidget != null)
-                          SliverToBoxAdapter(child: widget.bottomWidget),
-                        SliverPadding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          sliver: SliverToBoxAdapter(
-                            child: widget.typingIndicatorOptions
-                                    ?.customTypingIndicator ??
-                                TypingIndicator(
-                                  bubbleAlignment: widget.bubbleRtlAlignment,
-                                  options: widget.typingIndicatorOptions!,
-                                  showIndicator: (widget.typingIndicatorOptions!
-                                          .typingUsers.isNotEmpty &&
-                                      !_indicatorOnScrollStatus),
-                                ),
+              widget.onEndReached!().whenComplete(() {
+                _controller.duration = const Duration(milliseconds: 300);
+                _controller.reverse();
+
+                setState(() {
+                  _isNextPageLoading = false;
+                });
+              });
+            }
+
+            return false;
+          },
+          child: SingleChildScrollView(
+            physics: isScrollable ? null : NeverScrollableScrollPhysics(),
+            controller: _scrollController,
+            key: _listKey,
+            child: SizedBox(
+              height: 2000,
+              child: Stack(
+                key: _key,
+                children: [
+                  Positioned(
+                    top: 0,
+                    child: Container(
+                      width: MediaQuery.of(context).size.width,
+                      child: CustomScrollView(
+                        shrinkWrap: true,
+                        controller: widget.scrollController,
+                        keyboardDismissBehavior: widget.keyboardDismissBehavior,
+                        physics: widget.scrollPhysics,
+                        reverse: true,
+                        slivers: [
+                          if (widget.bottomWidget != null)
+                            SliverToBoxAdapter(child: widget.bottomWidget),
+                          SliverPadding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            sliver: SliverToBoxAdapter(
+                              child: widget.typingIndicatorOptions
+                                      ?.customTypingIndicator ??
+                                  TypingIndicator(
+                                    bubbleAlignment: widget.bubbleRtlAlignment,
+                                    options: widget.typingIndicatorOptions!,
+                                    showIndicator: (widget
+                                            .typingIndicatorOptions!
+                                            .typingUsers
+                                            .isNotEmpty &&
+                                        !_indicatorOnScrollStatus),
+                                  ),
+                            ),
                           ),
-                        ),
-                        // SliverPadding(
-                        //   padding: const EdgeInsets.only(bottom: 4),
-                        //   sliver: SliverToBoxAdapter(
-                        //     child: widget.itemBuilder(_oldData[6], 5),
-                        //   ),
-                        // ),
-                        SliverPadding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          sliver: PatchedSliverAnimatedList(
-                            findChildIndexCallback: (Key key) {
-                              if (key is ValueKey<Object>) {
-                                final newIndex = widget.items.indexWhere(
-                                  (v) => _valueKeyForItem(v) == key,
-                                );
-                                if (newIndex != -1) {
-                                  return newIndex;
+                          // SliverPadding(
+                          //   padding: const EdgeInsets.only(bottom: 4),
+                          //   sliver: SliverToBoxAdapter(
+                          //     child: widget.itemBuilder(_oldData[6], 5),
+                          //   ),
+                          // ),
+                          SliverPadding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            sliver: PatchedSliverAnimatedList(
+                              findChildIndexCallback: (Key key) {
+                                if (key is ValueKey<Object>) {
+                                  final newIndex = widget.items.indexWhere(
+                                    (v) => _valueKeyForItem(v) == key,
+                                  );
+                                  if (newIndex != -1) {
+                                    return newIndex;
+                                  }
                                 }
-                              }
-                              return null;
-                            },
-                            initialItemCount: widget.items.length,
-                            key: _listKey,
-                            itemBuilder: (_, index, animation) =>
-                                _newMessageBuilder(index, animation),
+                                return null;
+                              },
+                              initialItemCount: widget.items.length,
+                              //key: _listKey,
+                              itemBuilder: (_, index, animation) =>
+                                  _newMessageBuilder(index, animation),
+                            ),
                           ),
-                        ),
-                        SliverPadding(
-                          padding: EdgeInsets.only(
-                            top: 16 +
-                                (widget.useTopSafeAreaInset
-                                    ? MediaQuery.of(context).padding.top
-                                    : 0),
-                          ),
-                          sliver: SliverToBoxAdapter(
-                            child: SizeTransition(
-                              axisAlignment: 1,
-                              sizeFactor: _animation,
-                              child: Center(
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  height: 32,
-                                  width: 32,
-                                  child: SizedBox(
-                                    height: 16,
-                                    width: 16,
-                                    child: _isNextPageLoading
-                                        ? CircularProgressIndicator(
-                                            backgroundColor: Colors.transparent,
-                                            strokeWidth: 1.5,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                              InheritedChatTheme.of(context)
-                                                  .theme
-                                                  .primaryColor,
-                                            ),
-                                          )
-                                        : null,
+                          SliverPadding(
+                            padding: EdgeInsets.only(
+                              top: 16 +
+                                  (widget.useTopSafeAreaInset
+                                      ? MediaQuery.of(context).padding.top
+                                      : 0),
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: SizeTransition(
+                                axisAlignment: 1,
+                                sizeFactor: _animation,
+                                child: Center(
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    height: 32,
+                                    width: 32,
+                                    child: SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: _isNextPageLoading
+                                          ? CircularProgressIndicator(
+                                              backgroundColor:
+                                                  Colors.transparent,
+                                              strokeWidth: 1.5,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                InheritedChatTheme.of(context)
+                                                    .theme
+                                                    .primaryColor,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                // Container(
-                //   height: 700,
-                //   child: Stack(
-                //     children: [
-                //       Positioned(
-                //         top: 200,
-                //         left: 20,
-                //         height: 250,
-                //         width: 250,
-                //         child: Container(
-                //           width: 150,
-                //           height: 150,
-                //           color: Colors.green[300],
-                //           child: const Text(
-                //             '重ねるウィジェット',
-                //             style: TextStyle(color: Colors.white, fontSize: 20),
-                //           ),
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                // ),
-              ],
+                  Container(
+                    child: _buildStack(),
+                  ),
+                  // Container(
+                  //   height: 700,
+                  //   child: Stack(
+                  //     children: [
+                  //       Positioned(
+                  //         top: 200,
+                  //         left: 20,
+                  //         height: 250,
+                  //         width: 250,
+                  //         child: Container(
+                  //           width: 150,
+                  //           height: 150,
+                  //           color: Colors.green[300],
+                  //           child: const Text(
+                  //             '重ねるウィジェット',
+                  //             style: TextStyle(color: Colors.white, fontSize: 20),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
+                  // Container(
+                  //   child: _buildStack(),
+                  // ),
+                ],
+              ),
             ),
           ),
         ),

@@ -40,7 +40,7 @@ dependencies:
     path: ../
   http: ^0.13.5
   image_picker: ^0.8.6
-  intl: ^0.17.0
+  intl: ^0.18.0
   mime: ^1.0.2
   open_filex: ^4.2.2
   path_provider: ^2.0.11
@@ -69,8 +69,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - messages.json
-    - icon-pen.png
+    - assets/messages.json
+    - assets/icon-pen.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

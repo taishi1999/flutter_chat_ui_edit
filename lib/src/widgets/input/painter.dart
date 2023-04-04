@@ -70,6 +70,7 @@ class _PainterState extends State<Painter> {
   }
 
   void _onPanStart(DragStartDetails start) {
+    
     Offset pos = (context.findRenderObject() as RenderBox)
         .globalToLocal(start.globalPosition);
     widget.painterController._pathHistory.add(pos);
