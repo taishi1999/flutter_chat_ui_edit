@@ -325,7 +325,7 @@ class DefaultChatTheme extends ChatTheme {
     super.errorIcon,
     super.inputBackgroundColor = neutral0,
     super.inputBorderRadius = const BorderRadius.vertical(
-      top: Radius.circular(20),
+      top: Radius.circular(0),
     ),
     super.inputContainerDecoration,
     super.inputMargin = EdgeInsets.zero,
@@ -494,7 +494,7 @@ class DarkChatTheme extends ChatTheme {
     super.errorIcon,
     super.inputBackgroundColor = secondaryDark,
     super.inputBorderRadius = const BorderRadius.vertical(
-      top: Radius.circular(20),
+      top: Radius.circular(0),
     ),
     super.inputContainerDecoration,
     super.inputMargin = EdgeInsets.zero,

@@ -451,12 +451,13 @@ class ChatState extends State<Chat> {
         left: 0,
         width: 500,
         height: 1000,
-        child: Painter(
-          painterController: _controller,
-          onPanStart: _onPanStart,
-          onPanEnd: _onPanEnd,
-          // isLoadOnly: true,
-        ),
+        child: Container(),
+        // child: Painter(
+        //   painterController: _controller,
+        //   onPanStart: _onPanStart,
+        //   onPanEnd: _onPanEnd,
+        //   // isLoadOnly: true,
+        // ),
       );
 
   // お絵描き表示用Painter
@@ -694,13 +695,13 @@ class ChatState extends State<Chat> {
                         //     ),
                         //   ),
                         // ),
-                        // Center(
-                        //   child: Painter(
-                        //     painterController: _controller,
-                        //     onPanStart: _onPanStart,
-                        //     onPanEnd: _onPanEnd,
-                        //   ),
-                        // ),
+                        Center(
+                          child: Painter(
+                            painterController: _controller,
+                            onPanStart: _onPanStart,
+                            onPanEnd: _onPanEnd,
+                          ),
+                        ),
                         StatefulBuilder(builder:
                             (BuildContext context, StateSetter setState) {
                           return RotatedBox(
