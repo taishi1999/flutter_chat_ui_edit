@@ -848,7 +848,7 @@ class ChatState extends State<Chat> {
                                       ),
                                     ),
                                     onPressed: () {
-                                      //
+                                      //ここでスクロールポジションを取得して、
                                       _onPenPressed();
                                       _show();
                                       widget.onPenPressed
