@@ -76,8 +76,10 @@ class TextMessage extends StatelessWidget {
     }
 
     return Container(
+      //★テキストのmargin
       margin: EdgeInsets.symmetric(
-        horizontal: theme.messageInsetsHorizontal,
+        //horizontal: theme.messageInsetsHorizontal,
+
         vertical: theme.messageInsetsVertical,
       ),
       child: _textWidgetBuilder(user, context, enlargeEmojis),

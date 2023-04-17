@@ -350,6 +350,8 @@ class ChatState extends State<Chat> {
   bool _finished = false;
   bool isTouching = false;
 
+  double scrollposition = 0.0;
+
   /// Keep track of all the auto scroll indices by their respective message's id to allow animating to them.
   final Map<String, int> _autoScrollIndexById = {};
   late final AutoScrollController _scrollController;
@@ -363,6 +365,13 @@ class ChatState extends State<Chat> {
     controller.thickness = 5.0;
     controller.backgroundColor = Colors.transparent;
     return controller;
+  }
+
+  void setScrollPosition(double position) {
+    setState(() {
+      scrollposition = position;
+      //print('scrollposition: $scrollposition');
+    });
   }
 
   @override
@@ -396,6 +405,8 @@ class ChatState extends State<Chat> {
       _chatMessages = result[0] as List<Object>;
       _gallery = result[1] as List<PreviewImage>;
       _painter = result[2] as List<dynamic>;
+      // var p = _painter;
+      // print('_painter: $p');
 
       _refreshAutoScrollMapping();
       _maybeScrollToFirstUnread();
@@ -413,6 +424,7 @@ class ChatState extends State<Chat> {
   void scrollToUnreadHeader() {
     final unreadHeaderIndex = _autoScrollIndexById[_unreadHeaderId];
     if (unreadHeaderIndex != null) {
+      print('scrollToUnreadHeader');
       _scrollController.scrollToIndex(
         unreadHeaderIndex,
         duration: widget.scrollToUnreadOptions.scrollDuration,
@@ -421,11 +433,13 @@ class ChatState extends State<Chat> {
   }
 
   /// Scroll to the message with the specified [id].
-  void scrollToMessage(String id, {Duration? duration}) =>
-      _scrollController.scrollToIndex(
-        _autoScrollIndexById[id]!,
-        duration: duration ?? scrollAnimationDuration,
-      );
+  void scrollToMessage(String id, {Duration? duration}) {
+    print('scrollToMessage');
+    _scrollController.scrollToIndex(
+      _autoScrollIndexById[id]!,
+      duration: duration ?? scrollAnimationDuration,
+    );
+  }
 
   void _onPanStart() {
     setState(() {
@@ -440,36 +454,54 @@ class ChatState extends State<Chat> {
       isTouching = false;
 //TODO:ここで制御？
       // _controller.clear();
-      _controller.finish();
     });
   }
 
   // お絵描き用Painter
-  Positioned _displayPainter() => Positioned(
+  // Positioned _displayPainter() => Positioned(
+  //       // TODO:位置サイズどうする？.
+  //       top: 0,
+  //       left: 0,
+  //       width: 500,
+  //       height: 1000,
+  //       child: IgnorePointer(child: Container()),
+  //       // child: Painter(
+  //       //   painterController: _controller,
+  //       //   onPanStart: _onPanStart,
+  //       //   onPanEnd: _onPanEnd,
+  //       //   // isLoadOnly: true,
+  //       // ),
+  //     );
+
+  Container _displayPainter() => Container(
         // TODO:位置サイズどうする？.
-        top: 0,
-        left: 0,
-        width: 500,
-        height: 1000,
-        child: Container(),
-        // child: Painter(
-        //   painterController: _controller,
-        //   onPanStart: _onPanStart,
-        //   onPanEnd: _onPanEnd,
-        //   // isLoadOnly: true,
-        // ),
+        //height: 1000,
+        child: IgnorePointer(
+          ignoring: !_isPainterVisible,
+          child: new Painter(
+            painterController: _controller,
+            onPanStart: _onPanStart,
+            onPanEnd: _onPanEnd,
+            // isLoadOnly: true,
+          ),
+        ),
       );
 
   // お絵描き表示用Painter
   Positioned _displayLoadPainter() => Positioned(
         // TODO:位置サイズどうする？.
-        top: 0,
+        //top: 0,
+        top: scrollposition,
         left: 0,
         height: 1000,
         width: 2000,
-        child: Painter(
-          painterController: _loadPaintController.fromList(_painter),
-          isLoadOnly: true,
+        child: IgnorePointer(
+          child: Container(
+            child: Painter(
+              painterController: _loadPaintController.fromList(_painter),
+              isLoadOnly: true,
+            ),
+          ),
         ),
       );
 
@@ -522,6 +554,9 @@ class ChatState extends State<Chat> {
                                     items: _chatMessages,
                                     painter: _displayPainter(),
                                     loadPainter: _displayLoadPainter(),
+                                    setScrollPosition: (position) {
+                                      setScrollPosition(position);
+                                    },
                                     keyboardDismissBehavior:
                                         widget.keyboardDismissBehavior,
                                     onEndReached: widget.onEndReached,
@@ -538,7 +573,7 @@ class ChatState extends State<Chat> {
                               ),
                       ),
                       Visibility(
-                        visible: _isInputVisible,
+                        visible: !_isPainterVisible,
                         child: widget.customBottomWidget ??
                             Input(
                               isAttachmentUploading:
@@ -559,77 +594,8 @@ class ChatState extends State<Chat> {
                 ),
                 Visibility(
                   visible: _isPainterVisible,
-                  child: Scaffold(
-                    //tabbarなるものを使った方が良さそう
-                    // appBar: AppBar(
-                    //     automaticallyImplyLeading: true,
-                    //     centerTitle: true,
-                    //     title: Row(
-                    //       mainAxisSize: MainAxisSize.min,
-                    //       children: <Widget>[
-                    //         IconButton(
-                    //           icon: Icon(Icons.brightness_5),
-                    //           onPressed: null,
-                    //         ),
-                    //         IconButton(
-                    //           icon: Icon(Icons.brightness_5),
-                    //           onPressed: null,
-                    //         ),
-                    //       ],
-                    //     )),
-                    // appBar: AppBar(
-                    //   centerTitle: true,
-                    //   title: Row(
-                    //     mainAxisSize: MainAxisSize.min,
-                    //     children: <Widget>[],
-                    //   ),
-                    //   //backgroundColor: Colors.transparent,
-                    //   backgroundColor: Colors.transparent,
-                    //   elevation: 0,
-                    //   leadingWidth: 100,
-                    //   // leading: TextButton(
-                    //   //   style: ButtonStyle(
-                    //   //     overlayColor: MaterialStateProperty.all<Color>(
-                    //   //       Colors.white.withOpacity(0.2),
-                    //   //     ),
-                    //   //     foregroundColor:
-                    //   //         MaterialStateProperty.all<Color>(Colors.white),
-                    //   //   ),
-                    //   //   onPressed: () {
-                    //   //     _controller.clear();
-                    //   //     _onPenPressed();
-                    //   //     widget.onPenPressed?.call();
-                    //   //   },
-                    //   //   child: Text('キャンセル'),
-                    //   // ),
-                    //   actions: [
-                    //     // new IconButton(
-                    //     //     icon: new Icon(Icons.delete),
-                    //     //     tooltip: 'Clear',
-                    //     //     onPressed: _controller.clear),
-
-                    //     // new IconButton(
-                    //     //   icon: DecoratedIcon(
-                    //     //     Icons.check,
-                    //     //     shadows: [
-                    //     //       BoxShadow(
-                    //     //         color: Colors.black, //色
-                    //     //         blurRadius: 10, //ぼやけ具合
-                    //     //       ),
-                    //     //     ],
-                    //     //   ),
-                    //     //   onPressed: () {
-                    //     //     _onPenPressed();
-                    //     //     _show();
-                    //     //     widget.onPenPressed?.call();
-                    //     //   },
-                    //     // ),
-                    //   ],
-                    //   //bottom: BottomAppBar,
-                    // ),
-                    backgroundColor: Colors.transparent,
-                    extendBodyBehindAppBar: true,
-                    body: Stack(
+                  child: SafeArea(
+                    child: Stack(
                       children: [
                         // AnimatedContainer(
                         //     duration: const Duration(milliseconds: 300),
@@ -696,10 +662,177 @@ class ChatState extends State<Chat> {
                         //   ),
                         // ),
                         Center(
-                          child: Painter(
-                            painterController: _controller,
-                            onPanStart: _onPanStart,
-                            onPanEnd: _onPanEnd,
+                          child: Column(
+                            children: [
+                              AnimatedOpacity(
+                                opacity: 1,
+                                //opacity: isTouching ? 0.0 : 1.0,
+                                duration: Duration(milliseconds: 150),
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: Container(
+                                    color: Colors.black.withOpacity(0.5),
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 56,
+                                    //color: Colors.blueGrey,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      //crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        TextButton(
+                                          style: ButtonStyle(
+                                            overlayColor: MaterialStateProperty
+                                                .all<Color>(
+                                              Colors.white.withOpacity(0.2),
+                                            ),
+                                            foregroundColor:
+                                                MaterialStateProperty.all<
+                                                    Color>(
+                                              Colors.white,
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            _controller.clear();
+                                            _onPenPressed();
+                                            widget.onPenPressed?.call();
+                                            var position =
+                                                _scrollController.offset;
+                                            _scrollController.jumpTo(
+                                              position + 128,
+                                            );
+                                          },
+                                          child: Text(
+                                            'キャンセル',
+                                            style: TextStyle(
+                                              shadows: [
+                                                Shadow(
+                                                  blurRadius: 10.0,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              //enable: !_controller.isEmpty,
+                                              icon: Icon(
+                                                Icons.undo,
+                                                color: _controller.isEmpty
+                                                    ? Colors.grey
+                                                    : Colors.white,
+                                                shadows: [
+                                                  BoxShadow(
+                                                    color: Colors.black, //色
+                                                    blurRadius: 10, //ぼやけ具合
+                                                  ),
+                                                ],
+                                              ),
+                                              tooltip: 'Undo',
+                                              onPressed: _controller.isEmpty
+                                                  ? null
+                                                  : () {
+                                                      _controller.undo();
+                                                      setState(() {
+                                                        _controller
+                                                                .isUndoPathEmpty =
+                                                            false;
+                                                      });
+                                                      if (_controller.isEmpty) {
+                                                        print('undoでnullになったよ');
+                                                        setState(() {
+                                                          _controller.isEmpty =
+                                                              true;
+                                                        });
+                                                      }
+                                                    },
+                                            ),
+                                            IconButton(
+                                              //enable: !_controller.isEmpty,
+                                              icon: Icon(
+                                                Icons.redo,
+                                                color:
+                                                    _controller.isUndoPathEmpty
+                                                        ? Colors.grey
+                                                        : Colors.white,
+                                                shadows: [
+                                                  BoxShadow(
+                                                    //color: Colors.black, //色
+                                                    blurRadius: 10, //ぼやけ具合
+                                                  ),
+                                                ],
+                                              ),
+                                              tooltip: 'Redo',
+                                              onPressed: _controller
+                                                      .isUndoPathEmpty
+                                                  ? null
+                                                  : () {
+                                                      _controller.redo();
+                                                      setState(() {
+                                                        _controller.isEmpty =
+                                                            false;
+                                                      });
+                                                      if (_controller
+                                                          .isUndoPathEmpty) {
+                                                        print(
+                                                            'redoでnullになったよ!');
+                                                        setState(() {
+                                                          _controller
+                                                                  .isUndoPathEmpty =
+                                                              true;
+                                                        });
+                                                      }
+                                                    },
+                                            ),
+                                          ],
+                                        ),
+                                        TextButton(
+                                          style: ButtonStyle(
+                                            overlayColor: MaterialStateProperty
+                                                .all<Color>(
+                                              Colors.white.withOpacity(0.2),
+                                            ),
+                                            foregroundColor:
+                                                MaterialStateProperty.all<
+                                                    Color>(
+                                              Colors.white,
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            //ここでスクロールポジションを取得して、
+                                            _onPenPressed();
+                                            _show();
+                                            widget.onPenPressed
+                                                ?.call(_controller.toList());
+
+                                            //_controller.finish();
+                                            _controller.clear();
+                                          },
+                                          child: Text(
+                                            '完了',
+                                            style: TextStyle(
+                                              shadows: [
+                                                Shadow(
+                                                  blurRadius: 10.0,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Expanded(
+                              //   child: Painter(
+                              //     painterController: _controller,
+                              //     onPanStart: _onPanStart,
+                              //     onPanEnd: _onPanEnd,
+                              //   ),
+                              // ),
+                            ],
                           ),
                         ),
                         StatefulBuilder(builder:
@@ -727,149 +860,6 @@ class ChatState extends State<Chat> {
                             ),
                           );
                         }),
-                        AnimatedOpacity(
-                          opacity: isTouching ? 0.0 : 1.0,
-                          duration: Duration(milliseconds: 150),
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: Container(
-                              color: Colors.black.withOpacity(0.5),
-                              width: MediaQuery.of(context).size.width,
-                              height: 64,
-                              //color: Colors.blueGrey,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                //crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  TextButton(
-                                    style: ButtonStyle(
-                                      overlayColor:
-                                          MaterialStateProperty.all<Color>(
-                                        Colors.white.withOpacity(0.2),
-                                      ),
-                                      foregroundColor:
-                                          MaterialStateProperty.all<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      _controller.clear();
-                                      _onPenPressed();
-                                      widget.onPenPressed?.call();
-                                    },
-                                    child: Text(
-                                      'キャンセル',
-                                      style: TextStyle(
-                                        shadows: [
-                                          Shadow(
-                                            blurRadius: 10.0,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        //enable: !_controller.isEmpty,
-                                        icon: Icon(
-                                          Icons.undo,
-                                          color: _controller.isEmpty
-                                              ? Colors.grey
-                                              : Colors.white,
-                                          shadows: [
-                                            BoxShadow(
-                                              color: Colors.black, //色
-                                              blurRadius: 10, //ぼやけ具合
-                                            ),
-                                          ],
-                                        ),
-                                        tooltip: 'Undo',
-                                        onPressed: _controller.isEmpty
-                                            ? null
-                                            : () {
-                                                _controller.undo();
-                                                setState(() {
-                                                  _controller.isUndoPathEmpty =
-                                                      false;
-                                                });
-                                                if (_controller.isEmpty) {
-                                                  print('undoでnullになったよ');
-                                                  setState(() {
-                                                    _controller.isEmpty = true;
-                                                  });
-                                                }
-                                              },
-                                      ),
-                                      IconButton(
-                                        //enable: !_controller.isEmpty,
-                                        icon: Icon(
-                                          Icons.redo,
-                                          color: _controller.isUndoPathEmpty
-                                              ? Colors.grey
-                                              : Colors.white,
-                                          shadows: [
-                                            BoxShadow(
-                                              //color: Colors.black, //色
-                                              blurRadius: 10, //ぼやけ具合
-                                            ),
-                                          ],
-                                        ),
-                                        tooltip: 'Redo',
-                                        onPressed: _controller.isUndoPathEmpty
-                                            ? null
-                                            : () {
-                                                _controller.redo();
-                                                setState(() {
-                                                  _controller.isEmpty = false;
-                                                });
-                                                if (_controller
-                                                    .isUndoPathEmpty) {
-                                                  print('redoでnullになったよ!');
-                                                  setState(() {
-                                                    _controller
-                                                        .isUndoPathEmpty = true;
-                                                  });
-                                                }
-                                              },
-                                      ),
-                                    ],
-                                  ),
-                                  TextButton(
-                                    style: ButtonStyle(
-                                      overlayColor:
-                                          MaterialStateProperty.all<Color>(
-                                        Colors.white.withOpacity(0.2),
-                                      ),
-                                      foregroundColor:
-                                          MaterialStateProperty.all<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      //ここでスクロールポジションを取得して、
-                                      _onPenPressed();
-                                      _show();
-                                      widget.onPenPressed
-                                          ?.call(_controller.toList());
-                                    },
-                                    child: Text(
-                                      '完了',
-                                      style: TextStyle(
-                                        shadows: [
-                                          Shadow(
-                                            blurRadius: 10.0,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
 
                         AnimatedOpacity(
                           opacity: isTouching ? 0.0 : 1.0,
@@ -1051,6 +1041,7 @@ class ChatState extends State<Chat> {
       return widget.dateHeaderBuilder?.call(object) ??
           Container(
             alignment: Alignment.center,
+            color: Colors.amber,
             margin: widget.theme.dateDividerMargin,
             child: Text(
               object.text,
@@ -1082,8 +1073,8 @@ class ChatState extends State<Chat> {
       } else {
         final messageWidth =
             widget.showUserAvatars && message.author.id != widget.user.id
-                ? min(constraints.maxWidth * 0.72, 440).floor()
-                : min(constraints.maxWidth * 0.78, 440).floor();
+                ? min(constraints.maxWidth * 0.8, 440).floor()
+                : min(constraints.maxWidth * 0.8, 440).floor();
 
         messageWidget = Message(
           audioMessageBuilder: widget.audioMessageBuilder,
@@ -1127,12 +1118,37 @@ class ChatState extends State<Chat> {
           videoMessageBuilder: widget.videoMessageBuilder,
         );
       }
+      if (message.metadata != null) {
+        //新しくリストを作り追加
+        List<dynamic> _painter2 = [];
+        _painter2.add(message.metadata![MessageMetadata.painter.name]);
 
-      return AutoScrollTag(
-        controller: _scrollController,
-        index: index ?? -1,
-        key: Key('scroll-${message.id}'),
-        child: messageWidget,
+        print('_painter: $_painter');
+        //print(message.metadata);
+        return AutoScrollTag(
+          controller: _scrollController,
+          index: index ?? -1,
+          key: Key('scroll-${message.id}'),
+          child: Container(
+            height: MediaQuery.of(context).size.height,
+            child: RepaintBoundary(
+              // <-- 描画が重いのでRepaintBoundaryで囲んで見ましたが、効果なし
+              child: Painter(
+                painterController: _loadPaintController.fromList(_painter2),
+                //painterController: _loadPaintController.fromList(_painter),
+                isLoadOnly: true,
+              ),
+            ),
+          ),
+        );
+      }
+      return IgnorePointer(
+        child: AutoScrollTag(
+          controller: _scrollController,
+          index: index ?? -1,
+          key: Key('scroll-${message.id}'),
+          child: messageWidget,
+        ),
       );
     }
   }
@@ -1164,6 +1180,39 @@ class ChatState extends State<Chat> {
   }
 
   void _onPenPressed() {
+    // setState(() {
+    //   _chatMessages.add(Container(
+    //     color: Colors.pink,
+    //     height: MediaQuery.of(context).size.height,
+    //     // child: Painter(
+    //     //   painterController: _paintController,
+    //     //   isLoadOnly: false,
+    //     // ),
+    //   ));
+    // });
+
+    //if　scrollpositionが
+    var position = _scrollController.offset;
+    //print('position: $position');
+    if (position >= MediaQuery.of(context).size.height) {
+      var s = MediaQuery.of(context).padding.top;
+      print('MediaQuery.of(context).padding.top: $s');
+      _scrollController.animateTo(
+        56 + 0 + 24 + 0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInQuad,
+      );
+    } else {
+      _scrollController.jumpTo(
+        position - 64,
+      );
+    }
+    // _scrollController.animateTo(
+    //   128,
+    //   duration: const Duration(milliseconds: 300),
+    //   curve: Curves.easeInQuad,
+    // );
+    //_scrollController.jumpTo(_scrollController.position.minScrollExtent);
     setState(() {
       _isPainterVisible = !_isPainterVisible;
       //_isInputVisible = !_isInputVisible;

@@ -112,7 +112,7 @@ class _PainterPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_PainterPainter oldDelegate) {
-    return true;
+    return false;
   }
 }
 
@@ -239,6 +239,8 @@ class PictureDetails {
     final Image image = await toImage();
     final ByteData? data = await image.toByteData(format: ImageByteFormat.png);
     if (data != null) {
+      var a = data.buffer.asUint8List();
+      print('data.buffer.asUint8List(): $a');
       return data.buffer.asUint8List();
     } else {
       throw new FlutterError('Flutter failed to convert an Image to bytes!');
@@ -381,6 +383,7 @@ class PainterController extends ChangeNotifier {
   /// 画像がすでに完成している場合は、この操作は無効で何も行いません。
   void undo() {
     if (!isFinished()) {
+      print('undo実行');
       _pathHistory.undo();
       notifyListeners();
     }

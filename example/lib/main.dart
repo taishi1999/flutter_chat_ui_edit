@@ -68,6 +68,9 @@ class _ChatPageState extends State<ChatPage> {
           onSendPressed: _handleSendPressed,
           showUserAvatars: true,
           showUserNames: true,
+          scrollPhysics: _isAppBarVisible
+              ? ClampingScrollPhysics()
+              : NeverScrollableScrollPhysics(),
           user: _user,
         ),
       );

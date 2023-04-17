@@ -21,7 +21,9 @@ class FileMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = InheritedUser.of(context).user;
     final color = user.id == message.author.id
-        ? InheritedChatTheme.of(context).theme.sentMessageDocumentIconColor
+        // ? InheritedChatTheme.of(context).theme.sentMessageDocumentIconColor
+        // : InheritedChatTheme.of(context).theme.receivedMessageDocumentIconColor;
+        ? InheritedChatTheme.of(context).theme.receivedMessageDocumentIconColor
         : InheritedChatTheme.of(context).theme.receivedMessageDocumentIconColor;
 
     return Semantics(
