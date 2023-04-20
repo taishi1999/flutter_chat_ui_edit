@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 
+import '../../../flutter_chat_ui.dart';
 import '../../models/input_clear_mode.dart';
 import '../../models/send_button_visibility_mode.dart';
 import '../../util.dart';
+import '../message/text_message.dart';
 import '../state/inherited_chat_theme.dart';
 import '../state/inherited_l10n.dart';
 import 'attachment_button.dart';
@@ -119,7 +121,15 @@ class _InputState extends State<Input> {
   void _handleSendPressed() {
     final trimmedText = _textController.text.trim();
     if (trimmedText != '') {
-      final partialText = types.PartialText(text: trimmedText);
+      final metaData = Metadata(
+        textStyle: const TextStyle(
+            // TODO: ここで、色、サイズ等指定.
+            // color: Colors.red,
+            // fontSize: 16,
+            ),
+      );
+      final partialText =
+          types.PartialText(text: trimmedText, metadata: metaData.toMap());
       widget.onSendPressed(partialText);
 
       if (widget.options.inputClearMode == InputClearMode.always) {

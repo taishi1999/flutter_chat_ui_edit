@@ -229,7 +229,7 @@ class Chat extends StatefulWidget {
   /// See [Input.onAttachmentPressed].
   final VoidCallback? onAttachmentPressed;
 
-  final void Function([List<dynamic>])? onPenPressed;
+  final void Function([Map<String, dynamic>])? onPenPressed;
 
   /// See [Message.onAvatarTap].
   final void Function(types.User)? onAvatarTap;
@@ -341,7 +341,6 @@ class ChatState extends State<Chat> {
 
   List<Object> _chatMessages = [];
   List<PreviewImage> _gallery = [];
-  List<dynamic> _painter = [];
   PageController? _galleryPageController;
   bool _hadScrolledToUnreadOnOpen = false;
   bool _isImageViewVisible = false;
@@ -404,9 +403,6 @@ class ChatState extends State<Chat> {
 
       _chatMessages = result[0] as List<Object>;
       _gallery = result[1] as List<PreviewImage>;
-      _painter = result[2] as List<dynamic>;
-      // var p = _painter;
-      // print('_painter: $p');
 
       _refreshAutoScrollMapping();
       _maybeScrollToFirstUnread();
@@ -487,24 +483,6 @@ class ChatState extends State<Chat> {
         ),
       );
 
-  // お絵描き表示用Painter
-  Positioned _displayLoadPainter() => Positioned(
-        // TODO:位置サイズどうする？.
-        //top: 0,
-        top: scrollposition,
-        left: 0,
-        height: 1000,
-        width: 2000,
-        child: IgnorePointer(
-          child: Container(
-            child: Painter(
-              painterController: _loadPaintController.fromList(_painter),
-              isLoadOnly: true,
-            ),
-          ),
-        ),
-      );
-
   bool _isChange = false;
   bool _showIndicator = false;
   int _emptySelectedBorder = 1;
@@ -553,7 +531,6 @@ class ChatState extends State<Chat> {
                                     ),
                                     items: _chatMessages,
                                     painter: _displayPainter(),
-                                    loadPainter: _displayLoadPainter(),
                                     setScrollPosition: (position) {
                                       setScrollPosition(position);
                                     },
@@ -804,7 +781,7 @@ class ChatState extends State<Chat> {
                                             _onPenPressed();
                                             _show();
                                             widget.onPenPressed
-                                                ?.call(_controller.toList());
+                                                ?.call(_controller.toMap());
 
                                             //_controller.finish();
                                             _controller.clear();
@@ -1119,11 +1096,12 @@ class ChatState extends State<Chat> {
         );
       }
       if (message.metadata != null) {
-        //新しくリストを作り追加
-        List<dynamic> _painter2 = [];
-        _painter2.add(message.metadata![MessageMetadata.painter.name]);
+        // //新しくリストを作り追加
+        // List<dynamic> _painter2 = [];
+        // _painter2.add(message.metadata![MessageMetadata.painter.name]);
+        Map<String, dynamic> _mapPanter =
+            message.metadata![MessageMetadata.painter.name];
 
-        print('_painter: $_painter');
         //print(message.metadata);
         return AutoScrollTag(
           controller: _scrollController,
@@ -1134,8 +1112,8 @@ class ChatState extends State<Chat> {
             child: RepaintBoundary(
               // <-- 描画が重いのでRepaintBoundaryで囲んで見ましたが、効果なし
               child: Painter(
-                painterController: _loadPaintController.fromList(_painter2),
-                //painterController: _loadPaintController.fromList(_painter),
+                // painterController: _loadPaintController.fromList(_painter2),
+                painterController: _loadPaintController.fromMap(_mapPanter),
                 isLoadOnly: true,
               ),
             ),

@@ -261,6 +261,8 @@ class PainterController extends ChangeNotifier {
   _PathHistory _pathHistory;
   ValueGetter<Size>? _widgetFinish;
 
+  double _height = 0;
+
   /// [Painter] ウィジェットで使用するために新しいインスタンスを作成する。
   PainterController() : _pathHistory = new _PathHistory();
 
@@ -321,7 +323,7 @@ class PainterController extends ChangeNotifier {
   }
 
   /// 保存用情報を取得.
-  List<dynamic> toList() {
+  Map<String, dynamic> toMap() {
     final listResult = [];
     for (var i = 0; i < _pathHistory._paths.length; i++) {
       final paint = _pathHistory._paths[i].value;
@@ -331,13 +333,27 @@ class PainterController extends ChangeNotifier {
       }
       listResult.add(listType.toMap());
     }
-    return listResult;
+    return {
+      'height': _height,
+      'list': listResult,
+    };
   }
 
-  /// 保存用情報から復元.
-  PainterController fromList(List<dynamic> list) {
+  /// 保存用情報から復元新旧フォーマット対応版.
+  PainterController fromMetaData(dynamic metadata) =>
+      (metadata is List) ? fromList(metadata) : fromMap(metadata);
+
+  /// 保存用情報から復元旧フォーマット .
+  PainterController fromList(List<dynamic> list) => fromMap({
+        'height': 77, // エラー回避のため旧データは77で固定.
+        'list': list,
+      });
+
+  /// 保存用情報から復元新フォーマット .
+  PainterController fromMap(Map<String, dynamic> map) {
+    _height = map['height'];
     // CustomPaint fromList(List<dynamic> list) {
-    for (List<dynamic> listRow in list) {
+    for (List<dynamic> listRow in map['list']) {
       isEmpty = false;
       for (Map<String, dynamic> map in listRow) {
         final listType = ListType.fromMap(map);

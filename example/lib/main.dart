@@ -81,7 +81,7 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  void _handlePenPressed([List<dynamic>? saveValue]) {
+  void _handlePenPressed([Map<String, dynamic>? saveValue]) {
     setState(() {
       _isAppBarVisible = !_isAppBarVisible;
     });

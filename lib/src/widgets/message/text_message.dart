@@ -338,3 +338,41 @@ class TextMessageOptions {
   /// Additional matchers to parse the text.
   final List<MatchText> matchers;
 }
+
+/// Metadata への保存、呼び出し用.
+class Metadata {
+  Metadata({
+    this.textStyle = const TextStyle(),
+  });
+
+  Metadata.fromMap(Map<String, dynamic> map) {
+    if (map.containsKey(MessageMetadata.text.name)) {
+      final Map<String, dynamic> mapText = map[MessageMetadata.text.name];
+      Color? color;
+      double? fontSize;
+      if (mapText['color']) {
+        color = Color(int.parse(mapText['color'], radix: 16));
+      }
+      if (mapText['fontSize']) {
+        fontSize = mapText['fontSize'];
+      }
+      textStyle = TextStyle(
+        color: color,
+        fontSize: fontSize,
+      );
+    }
+  }
+
+  late TextStyle textStyle;
+
+  Map<String, dynamic> toMap() {
+    final mapText = {};
+    if (textStyle.color != null) {
+      mapText['color'] = textStyle.color!.value;
+    }
+    if (textStyle.fontSize != null) {
+      mapText['fontSize'] = textStyle.fontSize;
+    }
+    return {MessageMetadata.text.name: mapText};
+  }
+}

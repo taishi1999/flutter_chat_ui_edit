@@ -19,7 +19,6 @@ class ChatList extends StatefulWidget {
     required this.itemBuilder,
     required this.items,
     required this.painter,
-    required this.loadPainter,
     required this.setScrollPosition,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
     this.onEndReached,
@@ -48,9 +47,7 @@ class ChatList extends StatefulWidget {
   /// Items to build.
   final List<Object> items;
 
-  //final Positioned painter;
   final Container painter;
-  final Positioned loadPainter;
   final Function setScrollPosition;
 
   /// Used for pagination (infinite scroll). Called when user scrolls
@@ -310,35 +307,6 @@ class _ChatListState extends State<ChatList>
                 // ),
               ],
             ),
-
-            //widget.loadPainter,
-            //widget.painter,
-
-            // Container(
-            //   // height: 1000,
-            //   child: Stack(
-            //     fit: StackFit.passthrough,
-            //     children: [
-            //       widget.loadPainter,
-            //       // widget.painter,
-            //       // Positioned(
-            //       //   top: 200,
-            //       //   left: 20,
-            //       //   height: 250,
-            //       //   width: 250,
-            //       // child: Container(
-            //       //   width: 150,
-            //       //   height: 150,
-            //       //   color: Colors.green[300],
-            //       //   child: const Text(
-            //       //     '重ねるウィジェット',
-            //       //     style: TextStyle(color: Colors.white, fontSize: 20),
-            //       //   ),
-            //       // ),
-            //       // ),
-            //     ],
-            //   ),
-            // ),
           ],
         ),
       );
