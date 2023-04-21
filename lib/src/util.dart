@@ -140,7 +140,6 @@ List<Object> calculateChatMessages(
           msg.metadata![MessageMetadata.painter.name] != null) {
         painter.add(msg.metadata![MessageMetadata.painter.name]);
         var m = msg.metadata![MessageMetadata.painter.name];
-        print('hoge');
         //print('msg.metadata![MessageMetadata.painter.name: $m');
 
         //--- コメントアウト ---//

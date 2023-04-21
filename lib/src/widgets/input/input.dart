@@ -132,6 +132,7 @@ class _InputState extends State<Input> {
     setState(() {
       _sendButtonVisible = _textController.text.trim() != '';
     });
+    //print('TextField text changed: ${_textController.text}');
   }
 
   Widget _inputBuilder() {

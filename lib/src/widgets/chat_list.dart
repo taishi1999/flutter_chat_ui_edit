@@ -17,9 +17,11 @@ class ChatList extends StatefulWidget {
     required this.bubbleRtlAlignment,
     this.isLastPage,
     required this.itemBuilder,
+    required this.previewMessageBuilder,
     required this.items,
     required this.painter,
-    required this.loadPainter,
+    required this.isPenPressed,
+    //required this.loadPainter,
     required this.setScrollPosition,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
     this.onEndReached,
@@ -42,15 +44,19 @@ class ChatList extends StatefulWidget {
   /// pagination will not be triggered.
   final bool? isLastPage;
 
+  final bool isPenPressed;
+
   /// Item builder.
   final Widget Function(Object, int? index) itemBuilder;
+
+  final Widget Function() previewMessageBuilder;
 
   /// Items to build.
   final List<Object> items;
 
   //final Positioned painter;
   final Container painter;
-  final Positioned loadPainter;
+  //final Positioned loadPainter;
   final Function setScrollPosition;
 
   /// Used for pagination (infinite scroll). Called when user scrolls
@@ -105,25 +111,34 @@ class _ChatListState extends State<ChatList>
   double _height = 0;
   double screenHeight = 0;
 
+  ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    // widget.scrollController.addListener(() {
-    //   setState(() {
-    //     _topOffset = widget.scrollController.offset;
-    //     widget.setScrollPosition(_topOffset);
-    //     //print('topOffset: $_topOffset');
-    //   });
-    // });
+    widget.scrollController.addListener(() {
+      setState(() {
+        _topOffset = widget.scrollController.offset;
+        widget.setScrollPosition(_topOffset);
+        print('topOffset: $_topOffset');
+      });
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //_height = _key.currentContext!.size!.height;
-      //print('CustomScrollView height: $_height');
       widget.scrollController.jumpTo(
-          // widget.scrollController.position.minScrollExtent +
-          MediaQuery.of(context).size.height);
-      var a = widget.items.length;
-      print('a: $a');
+        MediaQuery.of(context).size.height,
+      );
+
+      // //_height = _key.currentContext!.size!.height;
+      // //print('CustomScrollView height: $_height');
+      // widget.scrollController.jumpTo(
+      //     //widget.scrollController.position.minScrollExtent +
+      //     MediaQuery.of(context).size.height
+      //     //0,
+      //     );
+      // print('topOffset: $_topOffset');
+      // // var a = widget.items.length;
+      // // print('a: $a');
     });
 
     didUpdateWidget(widget);
@@ -147,11 +162,13 @@ class _ChatListState extends State<ChatList>
       NotificationListener<ScrollNotification>(
         onNotification: (notification) {
           if (notification.metrics.pixels > 10.0 && !_indicatorOnScrollStatus) {
+            print('nortitification1');
             setState(() {
               _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
             });
           } else if (notification.metrics.pixels == 0.0 &&
               _indicatorOnScrollStatus) {
+            print('nortitification2');
             setState(() {
               _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
             });
@@ -188,6 +205,38 @@ class _ChatListState extends State<ChatList>
         child: Stack(
           //key: _key,
           children: [
+            CustomScrollView(
+              keyboardDismissBehavior: widget.keyboardDismissBehavior,
+              physics: widget.scrollPhysics,
+              controller: widget.scrollController,
+              reverse: true,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Container(
+                    //height: 300,
+                    height: MediaQuery.of(context).size.height,
+                    color: Colors.blue,
+                    //child: widget.isPenPressed ? widget.painter : null,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: widget.previewMessageBuilder(),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, index) {
+                      //final message = widget.items[index];
+                      return _newMessageBuilder(
+                        index,
+                        AlwaysStoppedAnimation<double>(1),
+                      );
+                    },
+                    childCount: widget.items.length,
+                  ),
+                  key: _listKey,
+                ),
+              ],
+            ),
             // ListView.builder(
             //   physics: widget.scrollPhysics,
             //   controller: widget.scrollController,
@@ -215,101 +264,106 @@ class _ChatListState extends State<ChatList>
             //   },
             // ),
 
-            CustomScrollView(
-              shrinkWrap: true,
-              controller: widget.scrollController,
-              keyboardDismissBehavior: widget.keyboardDismissBehavior,
-              physics: widget.scrollPhysics,
-              reverse: true,
-              slivers: [
-                // if (widget.bottomWidget != null)
-                //   SliverToBoxAdapter(child: widget.bottomWidget),
-                // SliverPadding(
-                //   padding: const EdgeInsets.only(bottom: 4),
-                //   sliver: SliverToBoxAdapter(
-                //     child:
-                //         widget.typingIndicatorOptions?.customTypingIndicator ??
-                //             TypingIndicator(
-                //               bubbleAlignment: widget.bubbleRtlAlignment,
-                //               options: widget.typingIndicatorOptions!,
-                //               showIndicator: (widget.typingIndicatorOptions!
-                //                       .typingUsers.isNotEmpty &&
-                //                   !_indicatorOnScrollStatus),
-                //             ),
-                //   ),
-                // ),
-                // SliverPadding(
-                //   padding: const EdgeInsets.only(bottom: 4),
-                //   sliver: SliverToBoxAdapter(
-                //     child: widget.itemBuilder(_oldData[6], 5),
-                //   ),
-                // ),
-                SliverToBoxAdapter(
-                  child: Container(
-                    height: MediaQuery.of(context).size.height,
-                    color: Colors.blue,
-                    child: widget.painter,
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  sliver: PatchedSliverAnimatedList(
-                    findChildIndexCallback: (Key key) {
-                      if (key is ValueKey<Object>) {
-                        final newIndex = widget.items.indexWhere(
-                          (v) => _valueKeyForItem(v) == key,
-                        );
-                        if (newIndex != -1) {
-                          return newIndex;
-                        }
-                      }
-                      return null;
-                    },
-                    initialItemCount: widget.items.length,
-                    key: _listKey,
-                    itemBuilder: (_, index, animation) =>
-                        _newMessageBuilder(index, animation),
-                  ),
-                ),
+            // CustomScrollView(
+            //   shrinkWrap: true,
+            //   controller: _scrollController,
+            //   //controller: widget.scrollController,
+            //   keyboardDismissBehavior: widget.keyboardDismissBehavior,
+            //   physics: widget.scrollPhysics,
+            //   reverse: true,
+            //   slivers: [
+            //     // if (widget.bottomWidget != null)
+            //     //   SliverToBoxAdapter(child: widget.bottomWidget),
+            //     // SliverPadding(
+            //     //   padding: const EdgeInsets.only(bottom: 4),
+            //     //   sliver: SliverToBoxAdapter(
+            //     //     child:
+            //     //         widget.typingIndicatorOptions?.customTypingIndicator ??
+            //     //             TypingIndicator(
+            //     //               bubbleAlignment: widget.bubbleRtlAlignment,
+            //     //               options: widget.typingIndicatorOptions!,
+            //     //               showIndicator: (widget.typingIndicatorOptions!
+            //     //                       .typingUsers.isNotEmpty &&
+            //     //                   !_indicatorOnScrollStatus),
+            //     //             ),
+            //     //   ),
+            //     // ),
+            //     // SliverPadding(
+            //     //   padding: const EdgeInsets.only(bottom: 4),
+            //     //   sliver: SliverToBoxAdapter(
+            //     //     child: widget.itemBuilder(_oldData[6], 5),
+            //     //   ),
+            //     // ),]
 
-                // SliverPadding(
-                //   padding: EdgeInsets.only(
-                //     top: 16 +
-                //         (widget.useTopSafeAreaInset
-                //             ? MediaQuery.of(context).padding.top
-                //             : 0),
-                //   ),
-                //   sliver: SliverToBoxAdapter(
-                //     child: SizeTransition(
-                //       axisAlignment: 1,
-                //       sizeFactor: _animation,
-                //       child: Center(
-                //         child: Container(
-                //           alignment: Alignment.center,
-                //           height: 32,
-                //           width: 32,
-                //           child: SizedBox(
-                //             height: 16,
-                //             width: 16,
-                //             child: _isNextPageLoading
-                //                 ? CircularProgressIndicator(
-                //                     backgroundColor: Colors.transparent,
-                //                     strokeWidth: 1.5,
-                //                     valueColor: AlwaysStoppedAnimation<Color>(
-                //                       InheritedChatTheme.of(context)
-                //                           .theme
-                //                           .primaryColor,
-                //                     ),
-                //                   )
-                //                 : null,
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //   ),
-                // ),
-              ],
-            ),
+            //     SliverToBoxAdapter(
+            //       child: Container(
+            //         //height: 300,
+            //         height: MediaQuery.of(context).size.height,
+            //         color: Colors.blue,
+            //         child: widget.isPenPressed ? widget.painter : null,
+            //       ),
+            //     ),
+            //     // SliverToBoxAdapter(
+            //     //   child: widget.previewMessageBuilder(),
+            //     // ),
+            //     SliverPadding(
+            //       padding: const EdgeInsets.only(bottom: 4),
+            //       sliver: PatchedSliverAnimatedList(
+            //         findChildIndexCallback: (Key key) {
+            //           if (key is ValueKey<Object>) {
+            //             final newIndex = widget.items.indexWhere(
+            //               (v) => _valueKeyForItem(v) == key,
+            //             );
+            //             if (newIndex != -1) {
+            //               return newIndex;
+            //             }
+            //           }
+            //           return null;
+            //         },
+            //         initialItemCount: widget.items.length,
+            //         key: _listKey,
+            //         itemBuilder: (_, index, animation) =>
+            //             _newMessageBuilder(index, animation),
+            //       ),
+            //     ),
+            //     // SliverPadding(
+            //     //   padding: EdgeInsets.only(
+            //     //     top: 16 +
+            //     //         (widget.useTopSafeAreaInset
+            //     //             ? MediaQuery.of(context).padding.top
+            //     //             : 0),
+            //     //   ),
+            //     //   sliver: SliverToBoxAdapter(
+            //     //     child: SizeTransition(
+            //     //       axisAlignment: 1,
+            //     //       sizeFactor: _animation,
+            //     //       child: Center(
+            //     //         child: Container(
+            //     //           alignment: Alignment.center,
+            //     //           height: 32,
+            //     //           width: 32,
+            //     //           child: SizedBox(
+            //     //             height: 16,
+            //     //             width: 16,
+            //     //             child: _isNextPageLoading
+            //     //                 ? CircularProgressIndicator(
+            //     //                     backgroundColor: Colors.transparent,
+            //     //                     strokeWidth: 1.5,
+            //     //                     valueColor: AlwaysStoppedAnimation<Color>(
+            //     //                       InheritedChatTheme.of(context)
+            //     //                           .theme
+            //     //                           .primaryColor,
+            //     //                     ),
+            //     //                   )
+            //     //                 : null,
+            //     //           ),
+            //     //         ),
+            //     //       ),
+            //     //     ),
+            //     //   ),
+            //     // ),
+            //   ],
+            // ),
 
             //widget.loadPainter,
             //widget.painter,
@@ -421,6 +475,7 @@ class _ChatListState extends State<ChatList>
 
   // Hacky solution to reconsider.
   void _scrollToBottomIfNeeded(List<Object> oldList) {
+    print('_scrollToBottomIfNeeded発火');
     try {
       // Take index 1 because there is always a spacer on index 0.
       final oldItem = oldList[1];

@@ -180,6 +180,8 @@ class Message extends StatelessWidget {
     final query = MediaQuery.of(context);
     final user = InheritedUser.of(context).user;
     final currentUserIsAuthor = user.id == message.author.id;
+    // print('user.id: ${user.id}');
+    // print('message.author.id: ${message.author.id}');
     final enlargeEmojis =
         emojiEnlargementBehavior != EmojiEnlargementBehavior.never &&
             message is types.TextMessage &&

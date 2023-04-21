@@ -336,6 +336,7 @@ class PainterController extends ChangeNotifier {
 
   /// 保存用情報から復元.
   PainterController fromList(List<dynamic> list) {
+    late double maxPos_y = 0.0;
     // CustomPaint fromList(List<dynamic> list) {
     for (List<dynamic> listRow in list) {
       isEmpty = false;
@@ -347,6 +348,9 @@ class PainterController extends ChangeNotifier {
         _pathHistory.currentPaint = paint;
         var isAdded = false;
         for (final offset in listType.getOffsetList()) {
+          var y = offset.dy;
+          maxPos_y < y ? maxPos_y = y : maxPos_y;
+
           if (isAdded) {
             _pathHistory.updateCurrent(offset);
           } else {
@@ -357,6 +361,7 @@ class PainterController extends ChangeNotifier {
         _pathHistory.endCurrent();
       }
     }
+    print('maxPos_y: $maxPos_y');
     _notifyListeners();
     return this;
   }

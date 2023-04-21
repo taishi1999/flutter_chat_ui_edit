@@ -352,12 +352,14 @@ class ChatState extends State<Chat> {
 
   double scrollposition = 0.0;
 
+  String inputText = ' ';
+  late final InputOptions options;
+
   /// Keep track of all the auto scroll indices by their respective message's id to allow animating to them.
   final Map<String, int> _autoScrollIndexById = {};
   late final AutoScrollController _scrollController;
 
   PainterController _controller = _newController();
-  PainterController _loadPaintController = _newController();
 
   static PainterController _newController() {
     PainterController controller = new PainterController();
@@ -374,12 +376,44 @@ class ChatState extends State<Chat> {
     });
   }
 
+  void jump() {
+    print('jump');
+    _scrollController.jumpTo(
+      MediaQuery.of(context).size.height,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
 
-    _scrollController = widget.scrollController ?? AutoScrollController();
+    _scrollController = widget.scrollController ??
+        AutoScrollController(
+            //initialScrollOffset: 300.0,
+            );
 
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   jump();
+    //   // print('スクロールさせたいです');
+    //   // _scrollController.animateTo(
+    //   //   300.0,
+    //   //   duration: Duration(milliseconds: 500),
+    //   //   curve: Curves.easeInOut,
+    //   // );
+    // });
+    options = InputOptions(
+      onTextChanged: (text) {
+        setState(() {
+          if (text == '') {
+            inputText = ' ';
+          } else {
+            inputText = text;
+          }
+        });
+
+        print(text);
+      },
+    );
     didUpdateWidget(widget);
   }
 
@@ -476,34 +510,31 @@ class ChatState extends State<Chat> {
   Container _displayPainter() => Container(
         // TODO:位置サイズどうする？.
         //height: 1000,
-        child: IgnorePointer(
-          ignoring: !_isPainterVisible,
-          child: new Painter(
-            painterController: _controller,
-            onPanStart: _onPanStart,
-            onPanEnd: _onPanEnd,
-            // isLoadOnly: true,
-          ),
+        child: Painter(
+          painterController: _controller,
+          onPanStart: _onPanStart,
+          onPanEnd: _onPanEnd,
+          // isLoadOnly: true,
         ),
       );
 
   // お絵描き表示用Painter
-  Positioned _displayLoadPainter() => Positioned(
-        // TODO:位置サイズどうする？.
-        //top: 0,
-        top: scrollposition,
-        left: 0,
-        height: 1000,
-        width: 2000,
-        child: IgnorePointer(
-          child: Container(
-            child: Painter(
-              painterController: _loadPaintController.fromList(_painter),
-              isLoadOnly: true,
-            ),
-          ),
-        ),
-      );
+  // Positioned _displayLoadPainter() => Positioned(
+  //       // TODO:位置サイズどうする？.
+  //       //top: 0,
+  //       top: scrollposition,
+  //       left: 0,
+  //       height: 1000,
+  //       width: 2000,
+  //       child: IgnorePointer(
+  //         child: Container(
+  //           child: Painter(
+  //             painterController: _loadPaintController.fromList(_painter),
+  //             isLoadOnly: true,
+  //           ),
+  //         ),
+  //       ),
+  //     );
 
   bool _isChange = false;
   bool _showIndicator = false;
@@ -525,52 +556,54 @@ class ChatState extends State<Chat> {
                   color: widget.theme.backgroundColor,
                   child: Column(
                     children: [
+                      // SizedBox.expand(
+                      //   child: _emptyStateBuilder(),
+                      // ),
                       Flexible(
-                        child: widget.messages.isEmpty
-                            ? SizedBox.expand(
-                                child: _emptyStateBuilder(),
-                              )
-                            : GestureDetector(
-                                onTap: () {
-                                  FocusManager.instance.primaryFocus?.unfocus();
-                                  widget.onBackgroundTap?.call();
-                                },
-                                child: LayoutBuilder(
-                                  builder: (
-                                    BuildContext context,
-                                    BoxConstraints constraints,
-                                  ) =>
-                                      ChatList(
-                                    bottomWidget: widget.listBottomWidget,
-                                    bubbleRtlAlignment:
-                                        widget.bubbleRtlAlignment!,
-                                    isLastPage: widget.isLastPage,
-                                    itemBuilder: (Object item, int? index) =>
-                                        _messageBuilder(
-                                      item,
-                                      constraints,
-                                      index,
-                                    ),
-                                    items: _chatMessages,
-                                    painter: _displayPainter(),
-                                    loadPainter: _displayLoadPainter(),
-                                    setScrollPosition: (position) {
-                                      setScrollPosition(position);
-                                    },
-                                    keyboardDismissBehavior:
-                                        widget.keyboardDismissBehavior,
-                                    onEndReached: widget.onEndReached,
-                                    onEndReachedThreshold:
-                                        widget.onEndReachedThreshold,
-                                    scrollController: _scrollController,
-                                    scrollPhysics: widget.scrollPhysics,
-                                    typingIndicatorOptions:
-                                        widget.typingIndicatorOptions,
-                                    useTopSafeAreaInset:
-                                        widget.useTopSafeAreaInset ?? isMobile,
-                                  ),
-                                ),
+                        child: GestureDetector(
+                          onTap: () {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            widget.onBackgroundTap?.call();
+                            jump();
+                          },
+                          child: LayoutBuilder(
+                            builder: (
+                              BuildContext context,
+                              BoxConstraints constraints,
+                            ) =>
+                                ChatList(
+                              bottomWidget: widget.listBottomWidget,
+                              bubbleRtlAlignment: widget.bubbleRtlAlignment!,
+                              isLastPage: widget.isLastPage,
+                              itemBuilder: (Object item, int? index) =>
+                                  _messageBuilder(
+                                item,
+                                constraints,
+                                index,
                               ),
+                              previewMessageBuilder: () =>
+                                  _previewMessageBuilder(constraints),
+                              items: _chatMessages,
+                              painter: _displayPainter(),
+                              isPenPressed: _isPainterVisible,
+                              //loadPainter: _displayLoadPainter(),
+                              setScrollPosition: (position) {
+                                setScrollPosition(position);
+                              },
+                              keyboardDismissBehavior:
+                                  widget.keyboardDismissBehavior,
+                              onEndReached: widget.onEndReached,
+                              onEndReachedThreshold:
+                                  widget.onEndReachedThreshold,
+                              scrollController: _scrollController,
+                              scrollPhysics: widget.scrollPhysics,
+                              typingIndicatorOptions:
+                                  widget.typingIndicatorOptions,
+                              useTopSafeAreaInset:
+                                  widget.useTopSafeAreaInset ?? isMobile,
+                            ),
+                          ),
+                        ),
                       ),
                       Visibility(
                         visible: !_isPainterVisible,
@@ -586,7 +619,7 @@ class ChatState extends State<Chat> {
                                 widget.onPenPressed?.call();
                               },
                               onSendPressed: widget.onSendPressed,
-                              options: widget.inputOptions,
+                              options: options,
                             ),
                       ),
                     ],
@@ -1119,11 +1152,13 @@ class ChatState extends State<Chat> {
         );
       }
       if (message.metadata != null) {
-        //新しくリストを作り追加
+        PainterController _loadPaintController = _newController();
         List<dynamic> _painter2 = [];
         _painter2.add(message.metadata![MessageMetadata.painter.name]);
+        // var p2 = _painter2[0].o;
 
-        print('_painter: $_painter');
+        // print('_painter2[1]: $p2');
+
         //print(message.metadata);
         return AutoScrollTag(
           controller: _scrollController,
@@ -1142,15 +1177,78 @@ class ChatState extends State<Chat> {
           ),
         );
       }
-      return IgnorePointer(
-        child: AutoScrollTag(
-          controller: _scrollController,
-          index: index ?? -1,
-          key: Key('scroll-${message.id}'),
-          child: messageWidget,
-        ),
+      return AutoScrollTag(
+        controller: _scrollController,
+        index: index ?? -1,
+        key: Key('scroll-${message.id}'),
+        child: messageWidget,
       );
     }
+  }
+
+  Widget _previewMessageBuilder(
+    BoxConstraints constraints,
+  ) {
+    final Widget previewMessageWidget;
+    final messageWidth = min(constraints.maxWidth * 0.8, 440).floor();
+    print('widget.user.id: ${widget.user.id}');
+    final _user = types.User(
+      firstName: "Matthew",
+      id: widget.user.id,
+      imageUrl:
+          "https://i.pravatar.cc/300?u=e52552f4-835d-4dbe-ba77-b076e659774d",
+      lastName: "White",
+    );
+    final textMessage = types.TextMessage(
+      author: _user,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      id: widget.user.id,
+      text: inputText,
+    );
+    //print('ユーザーid: ${widget.user.id}');
+    previewMessageWidget = Message(
+      audioMessageBuilder: widget.audioMessageBuilder,
+      avatarBuilder: widget.avatarBuilder,
+      bubbleBuilder: widget.bubbleBuilder,
+      bubbleRtlAlignment: widget.bubbleRtlAlignment,
+      customMessageBuilder: widget.customMessageBuilder,
+      customStatusBuilder: widget.customStatusBuilder,
+      emojiEnlargementBehavior: widget.emojiEnlargementBehavior,
+      fileMessageBuilder: widget.fileMessageBuilder,
+      hideBackgroundOnEmojiMessages: widget.hideBackgroundOnEmojiMessages,
+      imageHeaders: widget.imageHeaders,
+      imageMessageBuilder: widget.imageMessageBuilder,
+      message: textMessage,
+      messageWidth: messageWidth,
+      nameBuilder: widget.nameBuilder,
+      onAvatarTap: widget.onAvatarTap,
+      onMessageDoubleTap: widget.onMessageDoubleTap,
+      onMessageLongPress: widget.onMessageLongPress,
+      onMessageStatusLongPress: widget.onMessageStatusLongPress,
+      onMessageStatusTap: widget.onMessageStatusTap,
+      onMessageTap: (context, tappedMessage) {
+        if (tappedMessage is types.ImageMessage &&
+            widget.disableImageGallery != true) {
+          _onImagePressed(tappedMessage);
+        }
+        print('tappedMessage: $tappedMessage.type');
+        widget.onMessageTap?.call(context, tappedMessage);
+      },
+      onMessageVisibilityChanged: widget.onMessageVisibilityChanged,
+      onPreviewDataFetched: _onPreviewDataFetched,
+      roundBorder: true,
+      showAvatar: true,
+      showName: true,
+      showStatus: false,
+      showUserAvatars: widget.showUserAvatars,
+      textMessageBuilder: widget.textMessageBuilder,
+      textMessageOptions: widget.textMessageOptions,
+      usePreviewData: widget.usePreviewData,
+      userAgent: widget.userAgent,
+      videoMessageBuilder: widget.videoMessageBuilder,
+    );
+
+    return previewMessageWidget;
   }
 
   Border? returnBorder(int i) {
