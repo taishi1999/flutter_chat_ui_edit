@@ -356,7 +356,7 @@ class ChatState extends State<Chat> {
   late final AutoScrollController _scrollController;
 
   PainterController _controller = _newController();
-  PainterController _loadPaintController = _newController();
+  // PainterController _loadPaintController = _newController();
 
   static PainterController _newController() {
     PainterController controller = new PainterController();
@@ -1095,12 +1095,14 @@ class ChatState extends State<Chat> {
           videoMessageBuilder: widget.videoMessageBuilder,
         );
       }
-      if (message.metadata != null) {
+      if (message.metadata != null &&
+          message.metadata![MessageMetadata.painter.name] != null) {
         // //新しくリストを作り追加
         // List<dynamic> _painter2 = [];
         // _painter2.add(message.metadata![MessageMetadata.painter.name]);
-        Map<String, dynamic> _mapPanter =
+        final Map<String, dynamic> mapPanter =
             message.metadata![MessageMetadata.painter.name];
+        final loadPaintController = _newController();
 
         //print(message.metadata);
         return AutoScrollTag(
@@ -1113,7 +1115,7 @@ class ChatState extends State<Chat> {
               // <-- 描画が重いのでRepaintBoundaryで囲んで見ましたが、効果なし
               child: Painter(
                 // painterController: _loadPaintController.fromList(_painter2),
-                painterController: _loadPaintController.fromMap(_mapPanter),
+                painterController: loadPaintController.fromMetaData(mapPanter),
                 isLoadOnly: true,
               ),
             ),

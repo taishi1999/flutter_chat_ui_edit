@@ -350,29 +350,27 @@ class PainterController extends ChangeNotifier {
       });
 
   /// 保存用情報から復元新フォーマット .
-  PainterController fromMap(Map<String, dynamic> map) {
-    _height = map['height'];
+  PainterController fromMap(Map<String, dynamic> mapMetadata) {
+    _height = mapMetadata['height'];
     // CustomPaint fromList(List<dynamic> list) {
-    for (List<dynamic> listRow in map['list']) {
-      isEmpty = false;
-      for (Map<String, dynamic> map in listRow) {
-        final listType = ListType.fromMap(map);
-        final paint = listType.getPaint();
-        _drawColor = paint.color;
-        thickness = paint.strokeWidth;
-        _pathHistory.currentPaint = paint;
-        var isAdded = false;
-        for (final offset in listType.getOffsetList()) {
-          if (isAdded) {
-            _pathHistory.updateCurrent(offset);
-          } else {
-            _pathHistory.add(offset);
-            isAdded = true;
-          }
+    for (final Map<String, dynamic> map in mapMetadata['list']) {
+      final listType = ListType.fromMap(map);
+      final paint = listType.getPaint();
+      _drawColor = paint.color;
+      thickness = paint.strokeWidth;
+      _pathHistory.currentPaint = paint;
+      var isAdded = false;
+      for (final offset in listType.getOffsetList()) {
+        if (isAdded) {
+          _pathHistory.updateCurrent(offset);
+        } else {
+          _pathHistory.add(offset);
+          isAdded = true;
         }
-        _pathHistory.endCurrent();
       }
+      _pathHistory.endCurrent();
     }
+    isEmpty = false;
     _notifyListeners();
     return this;
   }
