@@ -261,10 +261,14 @@ class PainterController extends ChangeNotifier {
   _PathHistory _pathHistory;
   ValueGetter<Size>? _widgetFinish;
 
-  double _height = 0;
+  // Mapdataから取得した高さ.
+  double _heightFromMapData = 0;
 
   /// [Painter] ウィジェットで使用するために新しいインスタンスを作成する。
   PainterController() : _pathHistory = new _PathHistory();
+
+  /// 高さの取得.
+  double get heightFromMapData => _heightFromMapData;
 
   /// まだ何も描画されていない場合、true を返す。
   bool get isEmpty => _pathHistory.isEmpty;
@@ -333,8 +337,10 @@ class PainterController extends ChangeNotifier {
       }
       listResult.add(listType.toMap());
     }
+
+    /// 高さを↑で計算して↓でセット.
     return {
-      'height': _height,
+      'height': 12345,
       'list': listResult,
     };
   }
@@ -343,20 +349,20 @@ class PainterController extends ChangeNotifier {
   PainterController fromMetaData(dynamic metadata) =>
       (metadata is List) ? fromList(metadata) : fromMap(metadata);
 
-  /// 保存用情報から復元旧フォーマット .
+  /// 保存用情報から復元旧フォーマットのデータがない環境では不要 .
   PainterController fromList(List<dynamic> list) => fromMap({
-        'height': 77, // エラー回避のため旧データは77で固定.
+        'height': 77, // エラー回避のため旧データは仮で77で固定.
         'list': list,
       });
 
   /// 保存用情報から復元新フォーマット .
   PainterController fromMap(Map<String, dynamic> mapMetadata) {
-    _height = mapMetadata['height'];
+    _heightFromMapData = mapMetadata['height'];
     // CustomPaint fromList(List<dynamic> list) {
     for (final Map<String, dynamic> map in mapMetadata['list']) {
       final listType = ListType.fromMap(map);
       final paint = listType.getPaint();
-      _drawColor = paint.color;
+      drawColor = paint.color;
       thickness = paint.strokeWidth;
       _pathHistory.currentPaint = paint;
       var isAdded = false;

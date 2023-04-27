@@ -1100,9 +1100,9 @@ class ChatState extends State<Chat> {
         // //新しくリストを作り追加
         // List<dynamic> _painter2 = [];
         // _painter2.add(message.metadata![MessageMetadata.painter.name]);
-        final Map<String, dynamic> mapPanter =
-            message.metadata![MessageMetadata.painter.name];
-        final loadPaintController = _newController();
+        // metadata から PaintController を取得
+        final loadPaintController = _newController()
+            .fromMetaData(message.metadata![MessageMetadata.painter.name]);
 
         //print(message.metadata);
         return AutoScrollTag(
@@ -1110,12 +1110,14 @@ class ChatState extends State<Chat> {
           index: index ?? -1,
           key: Key('scroll-${message.id}'),
           child: Container(
-            height: MediaQuery.of(context).size.height,
+//            height: MediaQuery.of(context).size.height,
+            // metadataから取得した高さをセット 場所はここで良い？.
+            height: loadPaintController.heightFromMapData,
             child: RepaintBoundary(
               // <-- 描画が重いのでRepaintBoundaryで囲んで見ましたが、効果なし
               child: Painter(
                 // painterController: _loadPaintController.fromList(_painter2),
-                painterController: loadPaintController.fromMetaData(mapPanter),
+                painterController: loadPaintController,
                 isLoadOnly: true,
               ),
             ),
