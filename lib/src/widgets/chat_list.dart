@@ -94,11 +94,11 @@ class ChatList extends StatefulWidget {
 /// [ChatList] widget state.
 class _ChatListState extends State<ChatList>
     with SingleTickerProviderStateMixin {
-  late final Animation<double> _animation = CurvedAnimation(
-    curve: Curves.easeOutQuad,
-    parent: _controller,
-  );
-  late final AnimationController _controller = AnimationController(vsync: this);
+  // late final Animation<double> _animation = CurvedAnimation(
+  //   curve: Curves.easeOutQuad,
+  //   parent: _controller,
+  // );
+  //late final AnimationController _controller = AnimationController(vsync: this);
 
   bool _indicatorOnScrollStatus = false;
   bool _isNextPageLoading = false;
@@ -116,29 +116,23 @@ class _ChatListState extends State<ChatList>
   @override
   void initState() {
     super.initState();
-    widget.scrollController.addListener(() {
-      setState(() {
-        _topOffset = widget.scrollController.offset;
-        widget.setScrollPosition(_topOffset);
-        print('topOffset: $_topOffset');
-      });
-    });
+    // widget.scrollController.addListener(() {
+    //   setState(() {
+    //     _topOffset = widget.scrollController.offset;
+    //     widget.setScrollPosition(_topOffset);
+    //     //print('topOffset: $_topOffset');
+    //   });
+    // });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.scrollController.jumpTo(
+      widget.scrollController.animateTo(
         MediaQuery.of(context).size.height,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
       );
-
-      // //_height = _key.currentContext!.size!.height;
-      // //print('CustomScrollView height: $_height');
       // widget.scrollController.jumpTo(
-      //     //widget.scrollController.position.minScrollExtent +
-      //     MediaQuery.of(context).size.height
-      //     //0,
-      //     );
-      // print('topOffset: $_topOffset');
-      // // var a = widget.items.length;
-      // // print('a: $a');
+      //   MediaQuery.of(context).size.height,
+      // );
     });
 
     didUpdateWidget(widget);
@@ -153,7 +147,7 @@ class _ChatListState extends State<ChatList>
 
   @override
   void dispose() {
-    _controller.dispose();
+    //_controller.dispose();
     super.dispose();
   }
 
@@ -183,16 +177,16 @@ class _ChatListState extends State<ChatList>
                   (widget.onEndReachedThreshold ?? 0.75))) {
             if (widget.items.isEmpty || _isNextPageLoading) return false;
 
-            _controller.duration = Duration.zero;
-            _controller.forward();
+            // _controller.duration = Duration.zero;
+            //_controller.forward();
 
             setState(() {
               _isNextPageLoading = true;
             });
 
             widget.onEndReached!().whenComplete(() {
-              _controller.duration = const Duration(milliseconds: 300);
-              _controller.reverse();
+              // _controller.duration = const Duration(milliseconds: 300);
+              //_controller.reverse();
 
               setState(() {
                 _isNextPageLoading = false;
@@ -215,8 +209,8 @@ class _ChatListState extends State<ChatList>
                   child: Container(
                     //height: 300,
                     height: MediaQuery.of(context).size.height,
-                    color: Colors.blue,
-                    //child: widget.isPenPressed ? widget.painter : null,
+                    //color: Colors.blue,
+                    child: widget.isPenPressed ? widget.painter : null,
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -475,7 +469,6 @@ class _ChatListState extends State<ChatList>
 
   // Hacky solution to reconsider.
   void _scrollToBottomIfNeeded(List<Object> oldList) {
-    print('_scrollToBottomIfNeeded発火');
     try {
       // Take index 1 because there is always a spacer on index 0.
       final oldItem = oldList[1];

@@ -23,6 +23,8 @@ class Input extends StatefulWidget {
     this.onPenPressed,
     required this.onSendPressed,
     this.options = const InputOptions(),
+    required this.messageSize,
+    required this.textColor,
   });
 
   /// Whether attachment is uploading. Will replace attachment button with a
@@ -42,6 +44,10 @@ class Input extends StatefulWidget {
 
   /// Customisation options for the [Input].
   final InputOptions options;
+
+  final double messageSize;
+
+  final int textColor;
 
   @override
   State<Input> createState() => _InputState();
@@ -116,10 +122,27 @@ class _InputState extends State<Input> {
     }
   }
 
+  // void _handleSendPressed() {
+  //   final trimmedText = _textController.text.trim();
+  //   if (trimmedText != '') {
+  //     final partialText = types.PartialText(text: trimmedText);
+  //     widget.onSendPressed(partialText);
+
+  //     if (widget.options.inputClearMode == InputClearMode.always) {
+  //       _textController.clear();
+  //     }
+  //   }
+  // }
+
   void _handleSendPressed() {
     final trimmedText = _textController.text.trim();
     if (trimmedText != '') {
-      final partialText = types.PartialText(text: trimmedText);
+      Map<String, dynamic>? textStyle = {
+        'color': widget.textColor,
+        'fontsize': widget.messageSize,
+      };
+      final partialText =
+          types.PartialText(text: trimmedText, metadata: textStyle);
       widget.onSendPressed(partialText);
 
       if (widget.options.inputClearMode == InputClearMode.always) {

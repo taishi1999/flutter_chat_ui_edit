@@ -61,7 +61,8 @@ class TextMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final enlargeEmojis =
         emojiEnlargementBehavior != EmojiEnlargementBehavior.never &&
-            isConsistsOfEmojis(emojiEnlargementBehavior, message);
+            isConsistsOfEmojis(emojiEnlargementBehavior, message) &&
+            !isChangedFontSize();
     final theme = InheritedChatTheme.of(context).theme;
     final user = InheritedUser.of(context).user;
     final width = MediaQuery.of(context).size.width;
@@ -84,6 +85,19 @@ class TextMessage extends StatelessWidget {
       ),
       child: _textWidgetBuilder(user, context, enlargeEmojis),
     );
+  }
+
+  bool isChangedFontSize() {
+    if (message.metadata![TextMetadata.fontsize.name] != null) {
+      if (message.metadata![TextMetadata.fontsize.name].toDouble() != 16) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+    ;
   }
 
   Widget _linkPreview(
@@ -140,9 +154,19 @@ class TextMessage extends StatelessWidget {
     final bodyLinkTextStyle = user.id == message.author.id
         ? InheritedChatTheme.of(context).theme.sentMessageBodyLinkTextStyle
         : InheritedChatTheme.of(context).theme.receivedMessageBodyLinkTextStyle;
-    final bodyTextStyle = user.id == message.author.id
-        ? theme.sentMessageBodyTextStyle
-        : theme.receivedMessageBodyTextStyle;
+    //final bodyTextStyle = user.id == message.author.id
+    final bodyTextStyle = message.metadata != null
+        ? theme.sentMessageBodyTextStyle.copyWith(
+            color: message.metadata![TextMetadata.color.name] != null &&
+                    message.metadata![TextMetadata.color.name] is int
+                ? Color(message.metadata![TextMetadata.color.name])
+                : theme.sentMessageBodyTextStyle.color,
+            fontSize: message.metadata![TextMetadata.fontsize.name] != null
+                ? message.metadata![TextMetadata.fontsize.name].toDouble()
+                : theme.sentMessageBodyTextStyle.fontSize,
+          )
+        : theme.sentMessageBodyTextStyle;
+    //: theme.receivedMessageBodyTextStyle;
     final boldTextStyle = user.id == message.author.id
         ? theme.sentMessageBodyBoldTextStyle
         : theme.receivedMessageBodyBoldTextStyle;

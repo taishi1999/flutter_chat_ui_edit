@@ -388,7 +388,7 @@ class DefaultChatTheme extends ChatTheme {
       //color: neutral7,
       color: neutral0,
       fontSize: 16,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
       height: 1.5,
     ),
     super.sentMessageCaptionTextStyle = const TextStyle(

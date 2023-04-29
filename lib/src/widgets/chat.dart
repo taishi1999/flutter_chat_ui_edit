@@ -17,6 +17,7 @@ import '../models/unread_header_data.dart';
 import '../util.dart';
 import 'chat_list.dart';
 import 'image_gallery.dart';
+import 'input/animated_triangle.dart';
 import 'input/input.dart';
 import 'message/message.dart';
 import 'message/system_message.dart';
@@ -351,6 +352,7 @@ class ChatState extends State<Chat> {
   bool isTouching = false;
 
   double scrollposition = 0.0;
+  double messageSize = 16;
 
   String inputText = ' ';
   late final InputOptions options;
@@ -376,12 +378,30 @@ class ChatState extends State<Chat> {
     });
   }
 
-  void jump() {
-    print('jump');
-    _scrollController.jumpTo(
-      MediaQuery.of(context).size.height,
-    );
+  void setMessageSize(double sliderValue) {
+    setState(() {
+      //messageSize = double;
+
+      //スライダーを操作しやすくするために指数関数的に値を増やす
+      if (sliderValue > 16) {
+        double value =
+            (pow(1.1, sliderValue - 16) - 1) / (pow(1.1, 16) - 1) * 300 + 16;
+        print('value: $value');
+        messageSize = value;
+        ;
+      } else {
+        messageSize = sliderValue;
+      }
+      //print('messageSize: $messageSize');
+    });
   }
+
+  // void jump() {
+  //   print('jump');
+  //   _scrollController.jumpTo(
+  //     MediaQuery.of(context).size.height,
+  //   );
+  // }
 
   @override
   void initState() {
@@ -413,6 +433,7 @@ class ChatState extends State<Chat> {
 
         print(text);
       },
+      onTextFieldTap: () {},
     );
     didUpdateWidget(widget);
   }
@@ -538,7 +559,9 @@ class ChatState extends State<Chat> {
 
   bool _isChange = false;
   bool _showIndicator = false;
-  int _emptySelectedBorder = 1;
+  int _paintSelectedBorder = 1;
+  int _textSelectedBorder = 1;
+  Color textColor = Colors.black;
 
   List<Color>? _colorList = AppColors.defaultColors;
 
@@ -560,71 +583,105 @@ class ChatState extends State<Chat> {
                       //   child: _emptyStateBuilder(),
                       // ),
                       Flexible(
-                        child: GestureDetector(
-                          onTap: () {
-                            FocusManager.instance.primaryFocus?.unfocus();
-                            widget.onBackgroundTap?.call();
-                            jump();
-                          },
-                          child: LayoutBuilder(
-                            builder: (
-                              BuildContext context,
-                              BoxConstraints constraints,
-                            ) =>
-                                ChatList(
-                              bottomWidget: widget.listBottomWidget,
-                              bubbleRtlAlignment: widget.bubbleRtlAlignment!,
-                              isLastPage: widget.isLastPage,
-                              itemBuilder: (Object item, int? index) =>
-                                  _messageBuilder(
-                                item,
-                                constraints,
-                                index,
-                              ),
-                              previewMessageBuilder: () =>
-                                  _previewMessageBuilder(constraints),
-                              items: _chatMessages,
-                              painter: _displayPainter(),
-                              isPenPressed: _isPainterVisible,
-                              //loadPainter: _displayLoadPainter(),
-                              setScrollPosition: (position) {
-                                setScrollPosition(position);
+                        child: Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                                widget.onBackgroundTap?.call();
+                                //jump();
                               },
-                              keyboardDismissBehavior:
-                                  widget.keyboardDismissBehavior,
-                              onEndReached: widget.onEndReached,
-                              onEndReachedThreshold:
-                                  widget.onEndReachedThreshold,
-                              scrollController: _scrollController,
-                              scrollPhysics: widget.scrollPhysics,
-                              typingIndicatorOptions:
-                                  widget.typingIndicatorOptions,
-                              useTopSafeAreaInset:
-                                  widget.useTopSafeAreaInset ?? isMobile,
+                              child: LayoutBuilder(
+                                builder: (
+                                  BuildContext context,
+                                  BoxConstraints constraints,
+                                ) =>
+                                    ChatList(
+                                  bottomWidget: widget.listBottomWidget,
+                                  bubbleRtlAlignment:
+                                      widget.bubbleRtlAlignment!,
+                                  isLastPage: widget.isLastPage,
+                                  itemBuilder: (Object item, int? index) =>
+                                      _messageBuilder(
+                                    item,
+                                    constraints,
+                                    index,
+                                  ),
+                                  previewMessageBuilder: () =>
+                                      _previewMessageBuilder(constraints),
+                                  items: _chatMessages,
+                                  painter: _displayPainter(),
+                                  isPenPressed: _isPainterVisible,
+                                  //loadPainter: _displayLoadPainter(),
+                                  setScrollPosition: (position) {
+                                    setScrollPosition(position);
+                                  },
+                                  keyboardDismissBehavior:
+                                      widget.keyboardDismissBehavior,
+                                  onEndReached: widget.onEndReached,
+                                  onEndReachedThreshold:
+                                      widget.onEndReachedThreshold,
+                                  scrollController: _scrollController,
+                                  scrollPhysics: widget.scrollPhysics,
+                                  typingIndicatorOptions:
+                                      widget.typingIndicatorOptions,
+                                  useTopSafeAreaInset:
+                                      widget.useTopSafeAreaInset ?? isMobile,
+                                ),
+                              ),
                             ),
-                          ),
+                            Visibility(
+                              visible: inputText != ' ',
+                              child: colorPicker('text'),
+                            ),
+                          ],
                         ),
                       ),
                       Visibility(
                         visible: !_isPainterVisible,
-                        child: widget.customBottomWidget ??
-                            Input(
-                              isAttachmentUploading:
-                                  widget.isAttachmentUploading,
-                              onAttachmentPressed: widget.onAttachmentPressed,
-                              onPenPressed: () {
-                                //お絵描きPainter表示
-                                _onPenPressed();
-                                //mainのAppBar非表示
-                                widget.onPenPressed?.call();
-                              },
-                              onSendPressed: widget.onSendPressed,
-                              options: options,
-                            ),
+                        child: Column(
+                          children: [
+                            widget.customBottomWidget ??
+                                Input(
+                                  isAttachmentUploading:
+                                      widget.isAttachmentUploading,
+                                  onAttachmentPressed:
+                                      widget.onAttachmentPressed,
+                                  onPenPressed: () {
+                                    //お絵描きPainter表示
+                                    _onPenPressed();
+                                    //mainのAppBar非表示
+                                    widget.onPenPressed?.call();
+                                  },
+                                  onSendPressed: (types.PartialText message) {
+                                    widget.onSendPressed(message);
+                                    setState(() {
+                                      inputText = ' ';
+                                      messageSize = 16;
+                                    });
+                                  },
+                                  options: options,
+                                  messageSize: messageSize,
+                                  textColor: textColor.value,
+                                ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
+                // Visibility(
+                //   child: colorPicker(),
+                // ),
+                Visibility(
+                  visible: inputText != ' ',
+                  child: AnimatedTriangle(
+                    sliderFontValue: (double size) {
+                      setMessageSize(size);
+                    },
+                  ),
+                ),
+
                 Visibility(
                   visible: _isPainterVisible,
                   child: SafeArea(
@@ -694,6 +751,7 @@ class ChatState extends State<Chat> {
                         //     ),
                         //   ),
                         // ),
+
                         Center(
                           child: Column(
                             children: [
@@ -897,79 +955,7 @@ class ChatState extends State<Chat> {
                         AnimatedOpacity(
                           opacity: isTouching ? 0.0 : 1.0,
                           duration: Duration(milliseconds: 150),
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Container(
-                              height: 64,
-                              //color: Colors.blueGrey,
-                              child: SingleChildScrollView(
-                                physics: const BouncingScrollPhysics(),
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  //crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    ..._colorList!.map((color) {
-                                      final int index =
-                                          _colorList!.indexOf(color);
-
-                                      return AnimatedOnTapButton(
-                                        onTap: () {
-                                          _controller.drawColor =
-                                              _colorList![index];
-                                          setState(() {
-                                            _emptySelectedBorder = index;
-                                          });
-                                          print(
-                                            'showSelectedBorder: $_emptySelectedBorder',
-                                          );
-                                          // if (controlProvider.isPainting) {
-                                          //   paintingProvider.lineColor = index;
-                                          // } else {
-                                          //   editorProvider.textColor = index;
-                                          // }
-                                        },
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                          ),
-                                          child: Container(
-                                            // shadows: [
-                                            //   BoxShadow(
-                                            //     color: Colors.black, //色
-                                            //     blurRadius: 10, //ぼやけ具合
-                                            //   ),
-                                            // ],
-                                            height: 24,
-                                            width: 24,
-                                            alignment: Alignment.center,
-                                            decoration: BoxDecoration(
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black, //色
-                                                  spreadRadius: 1,
-                                                  blurRadius: 10,
-                                                  offset: Offset(0, 0),
-                                                ),
-                                              ],
-                                              color: _colorList![index],
-                                              shape: BoxShape.circle,
-                                              border:
-                                                  _emptySelectedBorder == index
-                                                      ? returnBorder(index)
-                                                      : Border.all(
-                                                          color: Colors.white,
-                                                          width: 2,
-                                                        ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
+                          child: colorPicker('paint'),
                         ),
                       ],
                     ),
@@ -1034,6 +1020,91 @@ class ChatState extends State<Chat> {
           ),
         ),
       );
+
+  Widget colorPicker(String TextOrPaint) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        height: 64,
+        color: Colors.transparent,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            //crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ..._colorList!.map((color) {
+                final int index = _colorList!.indexOf(color);
+
+                return AnimatedOnTapButton(
+                  onTap: () {
+                    if (TextOrPaint == 'paint') {
+                      _controller.drawColor = _colorList![index];
+
+                      setState(() {
+                        _paintSelectedBorder = index;
+                      });
+                    } else {
+                      setState(() {
+                        textColor = _colorList![index];
+                        _textSelectedBorder = index;
+                      });
+                    }
+                    // if (controlProvider.isPainting) {
+                    //   paintingProvider.lineColor = index;
+                    // } else {
+                    //   editorProvider.textColor = index;
+                    // }
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                    ),
+                    child: Container(
+                      // shadows: [
+                      //   BoxShadow(
+                      //     color: Colors.black, //色
+                      //     blurRadius: 10, //ぼやけ具合
+                      //   ),
+                      // ],
+                      height: 24,
+                      width: 24,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black, //色
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: Offset(0, 0),
+                          ),
+                        ],
+                        color: _colorList![index],
+                        shape: BoxShape.circle,
+                        border: TextOrPaint == 'paint'
+                            ? _paintSelectedBorder == index
+                                ? returnBorder(index)
+                                : Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  )
+                            : _textSelectedBorder == index
+                                ? returnBorder(index)
+                                : Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _emptyStateBuilder() =>
       widget.emptyState ??
@@ -1106,7 +1177,7 @@ class ChatState extends State<Chat> {
       } else {
         final messageWidth =
             widget.showUserAvatars && message.author.id != widget.user.id
-                ? min(constraints.maxWidth * 0.8, 440).floor()
+                ? min(constraints.maxWidth * 0.78, 440).floor()
                 : min(constraints.maxWidth * 0.78, 440).floor();
 
         messageWidget = Message(
@@ -1151,7 +1222,8 @@ class ChatState extends State<Chat> {
           videoMessageBuilder: widget.videoMessageBuilder,
         );
       }
-      if (message.metadata != null) {
+      if (message.metadata != null &&
+          message.metadata![MessageMetadata.painter.name] != null) {
         PainterController _loadPaintController = _newController();
         List<dynamic> _painter2 = [];
         _painter2.add(message.metadata![MessageMetadata.painter.name]);
@@ -1191,19 +1263,23 @@ class ChatState extends State<Chat> {
   ) {
     final Widget previewMessageWidget;
     final messageWidth = min(constraints.maxWidth * 0.8, 440).floor();
-    print('widget.user.id: ${widget.user.id}');
+    //print('widget.user.id: ${widget.user.id}');
     final _user = types.User(
-      firstName: "Matthew",
+      firstName: "Preview",
       id: widget.user.id,
-      imageUrl:
-          "https://i.pravatar.cc/300?u=e52552f4-835d-4dbe-ba77-b076e659774d",
-      lastName: "White",
+      //imageUrl: "https://i.pravatar.cc/300?u=e52552f4-835d-4dbe-ba77-b076e659774d",
+      //lastName: "White",
     );
+    Map<String, dynamic>? textStyle = {
+      'fontsize': messageSize,
+      'color': textColor.value,
+    };
     final textMessage = types.TextMessage(
       author: _user,
       createdAt: DateTime.now().millisecondsSinceEpoch,
       id: widget.user.id,
       text: inputText,
+      metadata: textStyle,
     );
     //print('ユーザーid: ${widget.user.id}');
     previewMessageWidget = Message(
@@ -1213,7 +1289,7 @@ class ChatState extends State<Chat> {
       bubbleRtlAlignment: widget.bubbleRtlAlignment,
       customMessageBuilder: widget.customMessageBuilder,
       customStatusBuilder: widget.customStatusBuilder,
-      emojiEnlargementBehavior: widget.emojiEnlargementBehavior,
+      emojiEnlargementBehavior: EmojiEnlargementBehavior.never,
       fileMessageBuilder: widget.fileMessageBuilder,
       hideBackgroundOnEmojiMessages: widget.hideBackgroundOnEmojiMessages,
       imageHeaders: widget.imageHeaders,
@@ -1243,16 +1319,24 @@ class ChatState extends State<Chat> {
       showUserAvatars: widget.showUserAvatars,
       textMessageBuilder: widget.textMessageBuilder,
       textMessageOptions: widget.textMessageOptions,
-      usePreviewData: widget.usePreviewData,
+      //falseに設定しないとExceptionsが発生する
+      usePreviewData: false,
       userAgent: widget.userAgent,
       videoMessageBuilder: widget.videoMessageBuilder,
     );
 
-    return previewMessageWidget;
+    return inputText != ' '
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: 64.0),
+            child: previewMessageWidget,
+          )
+        : Container();
   }
 
+  void calculateValue(double sliderValue) {}
+
   Border? returnBorder(int i) {
-    if (_emptySelectedBorder == 0) {
+    if (i == 0) {
       return Border.all(color: Colors.grey, width: 5);
     } else {
       return Border.all(color: Colors.white, width: 5);
@@ -1278,6 +1362,7 @@ class ChatState extends State<Chat> {
   }
 
   void _onPenPressed() {
+    print('_onPenPressed');
     // setState(() {
     //   _chatMessages.add(Container(
     //     color: Colors.pink,

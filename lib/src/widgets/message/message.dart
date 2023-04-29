@@ -214,7 +214,7 @@ class Message extends StatelessWidget {
     //       );
 
     return Container(
-      color: Colors.grey,
+      //color: Colors.grey,
       alignment: bubbleRtlAlignment == BubbleRtlAlignment.left
           ? currentUserIsAuthor
               //? AlignmentDirectional.centerEnd
@@ -325,12 +325,13 @@ class Message extends StatelessWidget {
               ? _messageBuilder()
               : Container(
                   decoration: BoxDecoration(
-                    //borderRadius: borderRadius,
-                    //color: !currentUserIsAuthor || message.type == types.MessageType.image
-                    color: InheritedChatTheme.of(context).theme.secondaryColor,
-                    // ? InheritedChatTheme.of(context).theme.secondaryColor
-                    // : InheritedChatTheme.of(context).theme.primaryColor,
-                  ),
+                      //borderRadius: borderRadius,
+                      //color: !currentUserIsAuthor || message.type == types.MessageType.image
+                      //textの吹き出しの色
+                      //color: InheritedChatTheme.of(context).theme.secondaryColor,
+                      // ? InheritedChatTheme.of(context).theme.secondaryColor
+                      // : InheritedChatTheme.of(context).theme.primaryColor,
+                      ),
                   child: ClipRRect(
                     //borderRadius: borderRadius,
                     child: _messageBuilder(),
