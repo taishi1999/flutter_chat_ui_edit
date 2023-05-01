@@ -328,19 +328,27 @@ class PainterController extends ChangeNotifier {
 
   /// 保存用情報を取得.
   Map<String, dynamic> toMap() {
+    late double lowestPathPoint = 0;
     final listResult = [];
     for (var i = 0; i < _pathHistory._paths.length; i++) {
       final paint = _pathHistory._paths[i].value;
       final listType = ListType(paint);
       for (final offset in _pathHistory._offsets[i]) {
         listType.addOffset(offset);
+
+        if (lowestPathPoint < offset.dy) {
+          lowestPathPoint = offset.dy + paint.strokeWidth;
+        }
       }
       listResult.add(listType.toMap());
+
+      print('lowestPathPoint1: $lowestPathPoint');
     }
+    print('lowestPathPoint2: $lowestPathPoint');
 
     /// 高さを↑で計算して↓でセット.
     return {
-      'height': 12345,
+      'height': lowestPathPoint,
       'list': listResult,
     };
   }
@@ -357,7 +365,8 @@ class PainterController extends ChangeNotifier {
 
   /// 保存用情報から復元新フォーマット .
   PainterController fromMap(Map<String, dynamic> mapMetadata) {
-    _heightFromMapData = mapMetadata['height'];
+    _heightFromMapData = mapMetadata['height'].toDouble();
+    print('_heightFromMapData: $_heightFromMapData');
     // CustomPaint fromList(List<dynamic> list) {
     for (final Map<String, dynamic> map in mapMetadata['list']) {
       final listType = ListType.fromMap(map);
