@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 class AnimatedTriangle extends StatefulWidget {
   const AnimatedTriangle({
     super.key,
-    required this.sliderFontValue,
+    required this.changeValue,
+    required this.defaultValue,
+    required this.maxValue,
   });
 
-  final void Function(double) sliderFontValue;
+  final void Function(double) changeValue;
+  final double defaultValue;
+
+  final double maxValue;
   @override
   _AnimatedTriangleState createState() => _AnimatedTriangleState();
 }
@@ -20,11 +25,17 @@ class _AnimatedTriangleState extends State<AnimatedTriangle>
   late AnimationController _animationController;
   late Animation<Size> _animation;
   late Animation<double> _translateAnimation;
-  double _sliderValue = 16;
+  double defaultValue = 1;
 
   @override
   void initState() {
     super.initState();
+
+    print('widget.defaultValue: ${widget.defaultValue}');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      defaultValue = widget.defaultValue;
+      widget.changeValue(defaultValue);
+    });
 
     _animationController = AnimationController(
       vsync: this,
@@ -90,16 +101,16 @@ class _AnimatedTriangleState extends State<AnimatedTriangle>
                       overlayShape: RoundSliderOverlayShape(overlayRadius: 0),
                     ),
                     child: Slider(
-                      value: _sliderValue,
+                      value: defaultValue,
                       min: 1,
-                      max: 32,
+                      max: widget.maxValue,
                       onChangeStart: (value) {
                         _animationController.forward();
                       },
                       onChanged: (double value) {
                         setState(() {
-                          _sliderValue = value;
-                          widget.sliderFontValue(value);
+                          defaultValue = value;
+                          widget.changeValue(value);
                           //_animationController.forward();
                         });
                       },

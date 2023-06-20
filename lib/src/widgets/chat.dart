@@ -33,6 +33,8 @@ import 'input/app_colors.dart';
 import 'input/animated_onTap_button.dart';
 import 'package:decorated_icon/decorated_icon.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 /// Entry widget, represents the complete chat. If you wrap it in [SafeArea] and
 /// it should be full screen, set [SafeArea]'s `bottom` to `false`.
 class Chat extends StatefulWidget {
@@ -102,7 +104,15 @@ class Chat extends StatefulWidget {
     this.userAgent,
     this.useTopSafeAreaInset,
     this.videoMessageBuilder,
+    this.penIcon,
+    this.imageIcon,
+    this.undoIcon,
+    this.sendIcon,
   });
+  final SvgPicture? penIcon;
+  final SvgPicture? imageIcon;
+  final SvgPicture Function(bool)? undoIcon;
+  final SvgPicture? sendIcon;
 
   /// See [Message.audioMessageBuilder].
   final Widget Function(types.AudioMessage, {required int messageWidth})?
@@ -230,7 +240,7 @@ class Chat extends StatefulWidget {
   /// See [Input.onAttachmentPressed].
   final VoidCallback? onAttachmentPressed;
 
-  final void Function([List<dynamic>])? onPenPressed;
+  final void Function([Map<String, dynamic>])? onPenPressed;
 
   /// See [Message.onAvatarTap].
   final void Function(types.User)? onAvatarTap;
@@ -342,7 +352,6 @@ class ChatState extends State<Chat> {
 
   List<Object> _chatMessages = [];
   List<PreviewImage> _gallery = [];
-  List<dynamic> _painter = [];
   PageController? _galleryPageController;
   bool _hadScrolledToUnreadOnOpen = false;
   bool _isImageViewVisible = false;
@@ -357,6 +366,8 @@ class ChatState extends State<Chat> {
   String inputText = ' ';
   late final InputOptions options;
 
+  final GlobalKey previewKey = GlobalKey();
+
   /// Keep track of all the auto scroll indices by their respective message's id to allow animating to them.
   final Map<String, int> _autoScrollIndexById = {};
   late final AutoScrollController _scrollController;
@@ -366,7 +377,7 @@ class ChatState extends State<Chat> {
   static PainterController _newController() {
     PainterController controller = new PainterController();
     //太さ
-    controller.thickness = 5.0;
+    controller.thickness = 16.0;
     controller.backgroundColor = Colors.transparent;
     return controller;
   }
@@ -374,34 +385,40 @@ class ChatState extends State<Chat> {
   void setScrollPosition(double position) {
     setState(() {
       scrollposition = position;
-      //print('scrollposition: $scrollposition');
     });
   }
 
-  void setMessageSize(double sliderValue) {
+  double setMessageSize(double sliderValue, double defaultValue, int max) {
+    double size = 1;
     setState(() {
-      //messageSize = double;
-
-      //スライダーを操作しやすくするために指数関数的に値を増やす
-      if (sliderValue > 16) {
-        double value =
-            (pow(1.1, sliderValue - 16) - 1) / (pow(1.1, 16) - 1) * 300 + 16;
-        print('value: $value');
-        messageSize = value;
-        ;
+      if (sliderValue > defaultValue) {
+        double value = (pow(1.1, sliderValue - defaultValue) - 1) /
+                (pow(1.1, defaultValue) - 1) *
+                max +
+            defaultValue;
+        size = value;
       } else {
-        messageSize = sliderValue;
+        size = sliderValue;
       }
-      //print('messageSize: $messageSize');
     });
+    return size;
   }
 
-  // void jump() {
-  //   print('jump');
-  //   _scrollController.jumpTo(
-  //     MediaQuery.of(context).size.height,
-  //   );
-  // }
+  void jump() {
+    _scrollController.animateTo(MediaQuery.of(context).size.height - 56,
+        duration: const Duration(milliseconds: 100), curve: Curves.easeInQuad);
+    // _scrollController.jumpTo(
+    //   MediaQuery.of(context).size.height - 56,
+    // );
+  }
+
+  void jump2() {
+    // _scrollController.animateTo(MediaQuery.of(context).size.height - 56,
+    //     duration: const Duration(milliseconds: 100), curve: Curves.easeInQuad);
+    _scrollController.jumpTo(
+      MediaQuery.of(context).size.height,
+    );
+  }
 
   @override
   void initState() {
@@ -412,21 +429,33 @@ class ChatState extends State<Chat> {
             //initialScrollOffset: 300.0,
             );
 
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   jump();
-    //   // print('スクロールさせたいです');
-    //   // _scrollController.animateTo(
-    //   //   300.0,
-    //   //   duration: Duration(milliseconds: 500),
-    //   //   curve: Curves.easeInOut,
-    //   // );
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(Duration(milliseconds: 300), () {
+        if (!_scrollController.hasClients) return;
+        _scrollController.jumpTo(
+          MediaQuery.of(context).size.height,
+          //1000.0
+        );
+      });
+      //jump2();
+      // print('スクロールさせたいです');
+      // _scrollController.animateTo(
+      //   300.0,
+      //   duration: Duration(milliseconds: 500),
+      //   curve: Curves.easeInOut,
+      // );
+    });
+
     options = InputOptions(
       onTextChanged: (text) {
         setState(() {
           if (text == '') {
             inputText = ' ';
           } else {
+            if (inputText == ' ') {
+              jump();
+            }
+
             inputText = text;
           }
         });
@@ -459,9 +488,6 @@ class ChatState extends State<Chat> {
 
       _chatMessages = result[0] as List<Object>;
       _gallery = result[1] as List<PreviewImage>;
-      _painter = result[2] as List<dynamic>;
-      // var p = _painter;
-      // print('_painter: $p');
 
       _refreshAutoScrollMapping();
       _maybeScrollToFirstUnread();
@@ -473,6 +499,14 @@ class ChatState extends State<Chat> {
     _galleryPageController?.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Size returnSizeOfPreviewMessage() {
+    final RenderBox renderBox =
+        previewKey.currentContext!.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    print('previewSize: $size');
+    return size;
   }
 
   /// Scroll to the unread header.
@@ -538,24 +572,6 @@ class ChatState extends State<Chat> {
           // isLoadOnly: true,
         ),
       );
-
-  // お絵描き表示用Painter
-  // Positioned _displayLoadPainter() => Positioned(
-  //       // TODO:位置サイズどうする？.
-  //       //top: 0,
-  //       top: scrollposition,
-  //       left: 0,
-  //       height: 1000,
-  //       width: 2000,
-  //       child: IgnorePointer(
-  //         child: Container(
-  //           child: Painter(
-  //             painterController: _loadPaintController.fromList(_painter),
-  //             isLoadOnly: true,
-  //           ),
-  //         ),
-  //       ),
-  //     );
 
   bool _isChange = false;
   bool _showIndicator = false;
@@ -630,8 +646,14 @@ class ChatState extends State<Chat> {
                                 ),
                               ),
                             ),
+                            // ConstrainedBox(
+                            //     constraints: BoxConstraints(
+                            //       minWidth: 200, // Set the minimum width
+                            //       maxWidth: 200, // Set the maximum width
+                            //     ),
+                            //     child: widget.penIcon ?? Container()),
                             Visibility(
-                              visible: inputText != ' ',
+                              visible: inputText != ' ' && !_isPainterVisible,
                               child: colorPicker('text'),
                             ),
                           ],
@@ -643,6 +665,9 @@ class ChatState extends State<Chat> {
                           children: [
                             widget.customBottomWidget ??
                                 Input(
+                                  penIcon: widget.penIcon,
+                                  imageIcon: widget.imageIcon,
+                                  sendIcon: widget.sendIcon,
                                   isAttachmentUploading:
                                       widget.isAttachmentUploading,
                                   onAttachmentPressed:
@@ -674,10 +699,13 @@ class ChatState extends State<Chat> {
                 //   child: colorPicker(),
                 // ),
                 Visibility(
-                  visible: inputText != ' ',
+                  visible: inputText != ' ' && !_isPainterVisible,
                   child: AnimatedTriangle(
-                    sliderFontValue: (double size) {
-                      setMessageSize(size);
+                    defaultValue: 16,
+                    maxValue: 32,
+                    changeValue: (double size) {
+                      messageSize = setMessageSize(size, 16, 300);
+                      returnSizeOfPreviewMessage();
                     },
                   ),
                 ),
@@ -762,7 +790,7 @@ class ChatState extends State<Chat> {
                                 child: Align(
                                   alignment: Alignment.topCenter,
                                   child: Container(
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withOpacity(0.8),
                                     width: MediaQuery.of(context).size.width,
                                     height: 56,
                                     //color: Colors.blueGrey,
@@ -796,6 +824,7 @@ class ChatState extends State<Chat> {
                                           child: Text(
                                             'キャンセル',
                                             style: TextStyle(
+                                              fontWeight: FontWeight.bold,
                                               shadows: [
                                                 Shadow(
                                                   blurRadius: 10.0,
@@ -806,103 +835,153 @@ class ChatState extends State<Chat> {
                                         ),
                                         Row(
                                           children: [
-                                            IconButton(
-                                              //enable: !_controller.isEmpty,
-                                              icon: Icon(
-                                                Icons.undo,
-                                                color: _controller.isEmpty
-                                                    ? Colors.grey
-                                                    : Colors.white,
-                                                shadows: [
-                                                  BoxShadow(
-                                                    color: Colors.black, //色
-                                                    blurRadius: 10, //ぼやけ具合
-                                                  ),
-                                                ],
-                                              ),
-                                              tooltip: 'Undo',
-                                              onPressed: _controller.isEmpty
-                                                  ? null
-                                                  : () {
-                                                      _controller.undo();
-                                                      setState(() {
-                                                        _controller
-                                                                .isUndoPathEmpty =
-                                                            false;
-                                                      });
-                                                      if (_controller.isEmpty) {
-                                                        print('undoでnullになったよ');
-                                                        setState(() {
-                                                          _controller.isEmpty =
-                                                              true;
-                                                        });
-                                                      }
-                                                    },
-                                            ),
-                                            IconButton(
-                                              //enable: !_controller.isEmpty,
-                                              icon: Icon(
-                                                Icons.redo,
-                                                color:
-                                                    _controller.isUndoPathEmpty
-                                                        ? Colors.grey
-                                                        : Colors.white,
-                                                shadows: [
-                                                  BoxShadow(
-                                                    //color: Colors.black, //色
-                                                    blurRadius: 10, //ぼやけ具合
-                                                  ),
-                                                ],
-                                              ),
-                                              tooltip: 'Redo',
-                                              onPressed: _controller
-                                                      .isUndoPathEmpty
-                                                  ? null
-                                                  : () {
-                                                      _controller.redo();
-                                                      setState(() {
-                                                        _controller.isEmpty =
-                                                            false;
-                                                      });
-                                                      if (_controller
-                                                          .isUndoPathEmpty) {
-                                                        print(
-                                                            'redoでnullになったよ!');
+                                            Container(
+                                              //color: Colors.blue,
+                                              width: 36,
+                                              child: IconButton(
+                                                //enable: !_controller.isEmpty,
+                                                icon: widget.undoIcon != null
+                                                    ? widget.undoIcon!(
+                                                        _controller.isEmpty)
+                                                    : Container(),
+                                                //  icon: widget.undoIcon != null
+                                                //     ? Image(
+                                                //         image: widget.undoIcon!,
+                                                //         color:
+                                                //             _controller.isEmpty
+                                                //                 ? Colors.grey
+                                                //                 : Colors.white,
+                                                //       )
+                                                //     : Container(),
+
+                                                // icon: Icon(
+                                                //   Icons.undo,
+                                                //   color: _controller.isEmpty
+                                                //       ? Colors.grey
+                                                //       : Colors.white,
+                                                //   shadows: [
+                                                //     BoxShadow(
+                                                //       color: Colors.black, //色
+                                                //       blurRadius: 10, //ぼやけ具合
+                                                //     ),
+                                                //   ],
+                                                // ),
+                                                tooltip: 'Undo',
+                                                onPressed: _controller.isEmpty
+                                                    ? null
+                                                    : () {
+                                                        _controller.undo();
                                                         setState(() {
                                                           _controller
                                                                   .isUndoPathEmpty =
-                                                              true;
+                                                              false;
                                                         });
-                                                      }
-                                                    },
+                                                        if (_controller
+                                                            .isEmpty) {
+                                                          print(
+                                                              'undoでnullになったよ');
+                                                          setState(() {
+                                                            _controller
+                                                                .isEmpty = true;
+                                                          });
+                                                        }
+                                                      },
+                                              ),
+                                            ),
+                                            Container(
+                                              //color: Colors.blue,
+                                              width: 36,
+                                              child: IconButton(
+                                                //enable: !_controller.isEmpty,
+                                                icon: Transform(
+                                                  alignment: Alignment.center,
+                                                  transform: Matrix4.identity()
+                                                    ..scale(-1.0, 1.0),
+                                                  child: widget.undoIcon != null
+                                                      ? widget.undoIcon!(
+                                                          _controller
+                                                              .isUndoPathEmpty)
+                                                      : Container(),
+                                                ),
+                                                // icon: widget.undoIcon != null
+                                                //     ? Image(
+                                                //         image: widget.undoIcon!,
+                                                //         color: _controller
+                                                //                 .isUndoPathEmpty
+                                                //             ? Colors.grey
+                                                //             : Colors.white,
+                                                //       )
+                                                //     : Container(),
+
+                                                // icon: Icon(
+                                                //   Icons.redo,
+                                                //   color:
+                                                //       _controller.isUndoPathEmpty
+                                                //           ? Colors.grey
+                                                //           : Colors.white,
+                                                //   shadows: [
+                                                //     BoxShadow(
+                                                //       //color: Colors.black, //色
+                                                //       blurRadius: 10, //ぼやけ具合
+                                                //     ),
+                                                //   ],
+                                                // ),
+                                                tooltip: 'Redo',
+                                                onPressed: _controller
+                                                        .isUndoPathEmpty
+                                                    ? null
+                                                    : () {
+                                                        _controller.redo();
+                                                        setState(() {
+                                                          _controller.isEmpty =
+                                                              false;
+                                                        });
+                                                        if (_controller
+                                                            .isUndoPathEmpty) {
+                                                          print(
+                                                              'redoでnullになったよ!');
+                                                          setState(() {
+                                                            _controller
+                                                                    .isUndoPathEmpty =
+                                                                true;
+                                                          });
+                                                        }
+                                                      },
+                                              ),
                                             ),
                                           ],
                                         ),
                                         TextButton(
                                           style: ButtonStyle(
-                                            overlayColor: MaterialStateProperty
-                                                .all<Color>(
-                                              Colors.white.withOpacity(0.2),
-                                            ),
-                                            foregroundColor:
-                                                MaterialStateProperty.all<
-                                                    Color>(
-                                              Colors.white,
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            //ここでスクロールポジションを取得して、
-                                            _onPenPressed();
-                                            _show();
-                                            widget.onPenPressed
-                                                ?.call(_controller.toList());
+                                              // overlayColor: MaterialStateProperty
+                                              //     .all<Color>(
+                                              //   Colors.white.withOpacity(1),
+                                              // ),
+                                              // foregroundColor:
+                                              //     MaterialStateProperty.all<
+                                              //         Color>(
+                                              //   Colors.white,
+                                              // ),
+                                              ),
+                                          onPressed: _controller.isEmpty
+                                              ? null
+                                              : () {
+                                                  //ここでスクロールポジションを取得して、
+                                                  _onPenPressed();
+                                                  _show();
+                                                  widget.onPenPressed?.call(
+                                                      _controller.toMap());
 
-                                            //_controller.finish();
-                                            _controller.clear();
-                                          },
+                                                  //_controller.finish();
+                                                  _controller.clear();
+                                                },
                                           child: Text(
                                             '完了',
                                             style: TextStyle(
+                                              color: _controller.isEmpty
+                                                  ? Colors.grey
+                                                  : Colors.white,
+                                              fontWeight: FontWeight.bold,
                                               shadows: [
                                                 Shadow(
                                                   blurRadius: 10.0,
@@ -926,31 +1005,41 @@ class ChatState extends State<Chat> {
                             ],
                           ),
                         ),
-                        StatefulBuilder(builder:
-                            (BuildContext context, StateSetter setState) {
-                          return RotatedBox(
-                            quarterTurns: 3,
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: Container(
-                                height: 15,
-                                width: 200,
-                                //color: Colors.green,
-                                child: Slider(
-                                  value: _controller.thickness,
-                                  onChanged: (double value) => setState(() {
-                                    _controller.thickness = value;
-                                  }),
-                                  min: 2.0,
-                                  max: 25.0,
-                                  activeColor: Colors.black.withOpacity(0.4),
-                                  inactiveColor: Colors.black.withOpacity(0.2),
-                                  thumbColor: Colors.grey,
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
+                        // StatefulBuilder(builder:
+                        //     (BuildContext context, StateSetter setState) {
+                        //   return RotatedBox(
+                        //     quarterTurns: 3,
+                        //     child: Align(
+                        //       alignment: Alignment.topCenter,
+                        //       child: Container(
+                        //         height: 15,
+                        //         width: 200,
+                        //         //color: Colors.green,
+                        //         child: Slider(
+                        //           value: _controller.thickness,
+                        //           onChanged: (double value) => setState(() {
+                        //             _controller.thickness = value;
+                        //           }),
+                        //           min: 2.0,
+                        //           max: 25.0,
+                        //           activeColor: Colors.black.withOpacity(0.4),
+                        //           inactiveColor: Colors.black.withOpacity(0.2),
+                        //           thumbColor: Colors.grey,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   );
+                        // }),
+                        AnimatedTriangle(
+                          defaultValue: 6,
+                          maxValue: 12,
+                          changeValue: (double size) {
+                            setState(() {
+                              _controller.thickness =
+                                  setMessageSize(size, 6, 100);
+                            });
+                          },
+                        ),
 
                         AnimatedOpacity(
                           opacity: isTouching ? 0.0 : 1.0,
@@ -1224,12 +1313,12 @@ class ChatState extends State<Chat> {
       }
       if (message.metadata != null &&
           message.metadata![MessageMetadata.painter.name] != null) {
-        PainterController _loadPaintController = _newController();
-        List<dynamic> _painter2 = [];
-        _painter2.add(message.metadata![MessageMetadata.painter.name]);
-        // var p2 = _painter2[0].o;
-
-        // print('_painter2[1]: $p2');
+        // //新しくリストを作り追加
+        // List<dynamic> _painter2 = [];
+        // _painter2.add(message.metadata![MessageMetadata.painter.name]);
+        // metadata から PaintController を取得
+        final loadPaintController = _newController()
+            .fromMetaData(message.metadata![MessageMetadata.painter.name]);
 
         //print(message.metadata);
         return AutoScrollTag(
@@ -1237,12 +1326,14 @@ class ChatState extends State<Chat> {
           index: index ?? -1,
           key: Key('scroll-${message.id}'),
           child: Container(
-            height: MediaQuery.of(context).size.height,
+//            height: MediaQuery.of(context).size.height,
+            // metadataから取得した高さをセット 場所はここで良い？.
+            height: loadPaintController.heightFromMapData,
             child: RepaintBoundary(
               // <-- 描画が重いのでRepaintBoundaryで囲んで見ましたが、効果なし
               child: Painter(
-                painterController: _loadPaintController.fromList(_painter2),
-                //painterController: _loadPaintController.fromList(_painter),
+                // painterController: _loadPaintController.fromList(_painter2),
+                painterController: loadPaintController,
                 isLoadOnly: true,
               ),
             ),
@@ -1327,7 +1418,8 @@ class ChatState extends State<Chat> {
 
     return inputText != ' '
         ? Padding(
-            padding: const EdgeInsets.only(bottom: 64.0),
+            key: previewKey,
+            padding: const EdgeInsets.only(bottom: 12.0),
             child: previewMessageWidget,
           )
         : Container();

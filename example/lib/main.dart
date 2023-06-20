@@ -54,13 +54,25 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) => Scaffold(
         appBar: _isAppBarVisible
             ? AppBar(
+                // leading: Image(
+                //   image: AssetImage('assets/icon-undo.png'),
+                //   color: Colors.black,
+                // ),
+                leading: Image.asset('assets/icon-pen.png'),
                 backgroundColor: neutral0,
                 title: const Text('friends'),
               )
             : null,
         body: Chat(
+          // undoIcon: Image(
+          //   image: AssetImage('assets/icon-undo.png'),
+          //   color: Colors.black,
+          // ),
+          //penIcon: AssetImage('assets/icon-pen.png'),
           messages: _messages,
-          onAttachmentPressed: _handleAttachmentPressed,
+
+          onAttachmentPressed: _handleImageSelection,
+          //onAttachmentPressed: _handleAttachmentPressed,
           onPenPressed: _handlePenPressed,
           //onCheckPressed:_handlePenPressed,
           onMessageTap: _handleMessageTap,
@@ -81,7 +93,7 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  void _handlePenPressed([List<dynamic>? saveValue]) {
+  void _handlePenPressed([Map<String, dynamic>? saveValue]) {
     setState(() {
       _isAppBarVisible = !_isAppBarVisible;
     });

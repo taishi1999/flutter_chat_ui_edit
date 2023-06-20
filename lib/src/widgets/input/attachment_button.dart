@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../state/inherited_chat_theme.dart';
 import '../state/inherited_l10n.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 /// A class that represents attachment button widget.
 class AttachmentButton extends StatelessWidget {
   /// Creates attachment button widget.
@@ -11,6 +13,7 @@ class AttachmentButton extends StatelessWidget {
     this.isLoading = false,
     this.onPressed,
     this.padding = EdgeInsets.zero,
+    this.imageIcon,
   });
 
   /// Show a loading indicator instead of the button.
@@ -22,8 +25,11 @@ class AttachmentButton extends StatelessWidget {
   /// Padding around the button.
   final EdgeInsets padding;
 
+  final SvgPicture? imageIcon;
+
   @override
   Widget build(BuildContext context) => Container(
+        //color: Colors.amber,
         margin: InheritedChatTheme.of(context).theme.attachmentButtonMargin ??
             const EdgeInsetsDirectional.fromSTEB(
               8,
@@ -48,14 +54,16 @@ class AttachmentButton extends StatelessWidget {
                     ),
                   ),
                 )
-              : InheritedChatTheme.of(context).theme.attachmentButtonIcon ??
-                  Image.asset(
-                    'assets/icon-attachment.png',
-                    color: InheritedChatTheme.of(context).theme.inputTextColor,
-                    package: 'flutter_chat_ui',
-                  ),
+              //: InheritedChatTheme.of(context).theme.attachmentButtonIcon ??
+              : imageIcon ?? Container(),
+
+          // Image.asset(
+          //   'assets/icon-attachment.png',
+          //   color: InheritedChatTheme.of(context).theme.inputTextColor,
+          //   package: 'flutter_chat_ui',
+          // ),
           onPressed: isLoading ? null : onPressed,
-          padding: padding,
+          //padding: padding,
           splashRadius: 24,
           tooltip:
               InheritedL10n.of(context).l10n.attachmentButtonAccessibilityLabel,

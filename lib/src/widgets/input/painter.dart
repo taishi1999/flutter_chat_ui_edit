@@ -261,8 +261,14 @@ class PainterController extends ChangeNotifier {
   _PathHistory _pathHistory;
   ValueGetter<Size>? _widgetFinish;
 
+  // Mapdataから取得した高さ.
+  double _heightFromMapData = 0;
+
   /// [Painter] ウィジェットで使用するために新しいインスタンスを作成する。
   PainterController() : _pathHistory = new _PathHistory();
+
+  /// 高さの取得.
+  double get heightFromMapData => _heightFromMapData;
 
   /// まだ何も描画されていない場合、true を返す。
   bool get isEmpty => _pathHistory.isEmpty;
@@ -321,47 +327,62 @@ class PainterController extends ChangeNotifier {
   }
 
   /// 保存用情報を取得.
-  List<dynamic> toList() {
+  Map<String, dynamic> toMap() {
+    late double lowestPathPoint = 0;
     final listResult = [];
     for (var i = 0; i < _pathHistory._paths.length; i++) {
       final paint = _pathHistory._paths[i].value;
       final listType = ListType(paint);
       for (final offset in _pathHistory._offsets[i]) {
         listType.addOffset(offset);
+
+        if (lowestPathPoint < offset.dy) {
+          lowestPathPoint = offset.dy + paint.strokeWidth + 8;
+        }
       }
       listResult.add(listType.toMap());
     }
-    return listResult;
+
+    /// 高さを↑で計算して↓でセット.
+    return {
+      'height': lowestPathPoint,
+      'list': listResult,
+    };
   }
 
-  /// 保存用情報から復元.
-  PainterController fromList(List<dynamic> list) {
-    late double maxPos_y = 0.0;
-    // CustomPaint fromList(List<dynamic> list) {
-    for (List<dynamic> listRow in list) {
-      isEmpty = false;
-      for (Map<String, dynamic> map in listRow) {
-        final listType = ListType.fromMap(map);
-        final paint = listType.getPaint();
-        _drawColor = paint.color;
-        thickness = paint.strokeWidth;
-        _pathHistory.currentPaint = paint;
-        var isAdded = false;
-        for (final offset in listType.getOffsetList()) {
-          var y = offset.dy;
-          maxPos_y < y ? maxPos_y = y : maxPos_y;
+  /// 保存用情報から復元新旧フォーマット対応版.
+  PainterController fromMetaData(dynamic metadata) =>
+      (metadata is List) ? fromList(metadata) : fromMap(metadata);
 
-          if (isAdded) {
-            _pathHistory.updateCurrent(offset);
-          } else {
-            _pathHistory.add(offset);
-            isAdded = true;
-          }
+  /// 保存用情報から復元旧フォーマットのデータがない環境では不要 .
+  PainterController fromList(List<dynamic> list) => fromMap({
+        'height': 77, // エラー回避のため旧データは仮で77で固定.
+        'list': list,
+      });
+
+  /// 保存用情報から復元新フォーマット .
+  PainterController fromMap(Map<String, dynamic> mapMetadata) {
+    _heightFromMapData = mapMetadata['height'].toDouble();
+
+    // CustomPaint fromList(List<dynamic> list) {
+    for (final Map<String, dynamic> map in mapMetadata['list']) {
+      final listType = ListType.fromMap(map);
+      final paint = listType.getPaint();
+      drawColor = paint.color;
+      thickness = paint.strokeWidth;
+      _pathHistory.currentPaint = paint;
+      var isAdded = false;
+      for (final offset in listType.getOffsetList()) {
+        if (isAdded) {
+          _pathHistory.updateCurrent(offset);
+        } else {
+          _pathHistory.add(offset);
+          isAdded = true;
         }
-        _pathHistory.endCurrent();
       }
+      _pathHistory.endCurrent();
     }
-    print('maxPos_y: $maxPos_y');
+    isEmpty = false;
     _notifyListeners();
     return this;
   }

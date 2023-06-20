@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 
+import '../../../flutter_chat_ui.dart';
 import '../../util.dart';
 import '../state/inherited_chat_theme.dart';
 
@@ -18,7 +19,8 @@ class UserName extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = InheritedChatTheme.of(context).theme;
-    final color = getUserAvatarNameColor(author, theme.userAvatarNameColors);
+    //final color = getUserAvatarNameColor(author, theme.userAvatarNameColors);
+    final color = neutral0;
     final name = getUserName(author);
 
     return name.isEmpty

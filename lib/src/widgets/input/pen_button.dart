@@ -4,6 +4,8 @@ import '../../../flutter_chat_ui.dart';
 import '../state/inherited_chat_theme.dart';
 import '../state/inherited_l10n.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 /// A class that represents attachment button widget.
 class PenButton extends StatelessWidget {
   /// Creates attachment button widget.
@@ -12,6 +14,7 @@ class PenButton extends StatelessWidget {
     this.isLoading = false,
     this.onPressed,
     this.padding = EdgeInsets.zero,
+    this.penIcon,
   });
 
   /// Show a loading indicator instead of the button.
@@ -22,6 +25,8 @@ class PenButton extends StatelessWidget {
 
   /// Padding around the button.
   final EdgeInsets padding;
+
+  final SvgPicture? penIcon;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -49,13 +54,23 @@ class PenButton extends StatelessWidget {
                     ),
                   ),
                 )
-              : InheritedChatTheme.of(context).theme.attachmentButtonIcon ??
-                  Icon(
-                    Icons.mode_edit_outline_outlined,
-                    color: Colors.white,
-                  ),
-          //Image.asset('icon-pen.png'),
+              //: InheritedChatTheme.of(context).theme.attachmentButtonIcon ??
+
+              // Icon(
+              //   Icons.mode_edit_outline_outlined,
+              //   color: Colors.white,
+              // ),
+              //Image.asset('assets/icon-pen.png'),
+              // Image.asset(
+              //   'lib/assets/icon-pen.png',
+              //   color: InheritedChatTheme.of(context).theme.inputTextColor,
+              //   //package: 'flutter_chat_ui_edit',
+              // ),
+
+              : penIcon ?? Container(),
+
           // Image.asset(
+          //   //'assets/icon-pen.png',
           //   'assets/icon-document.png',
           //   color: InheritedChatTheme.of(context).theme.inputTextColor,
           //   package: 'flutter_chat_ui',

@@ -72,7 +72,11 @@ class TextMessage extends StatelessWidget {
       final matches = urlRegexp.allMatches(message.text);
 
       if (matches.isNotEmpty) {
-        return _linkPreview(user, width, context);
+        print('matches.isNotEmpty');
+
+        //return _linkPreview(user, width, context);
+      } else {
+        print('matches.isEmpty');
       }
     }
 
@@ -164,6 +168,11 @@ class TextMessage extends StatelessWidget {
             fontSize: message.metadata![TextMetadata.fontsize.name] != null
                 ? message.metadata![TextMetadata.fontsize.name].toDouble()
                 : theme.sentMessageBodyTextStyle.fontSize,
+            fontWeight: message.metadata![TextMetadata.fontsize.name] != null
+                ? message.metadata![TextMetadata.fontsize.name].toDouble() > 20
+                    ? FontWeight.bold
+                    : FontWeight.normal
+                : FontWeight.normal,
           )
         : theme.sentMessageBodyTextStyle;
     //: theme.receivedMessageBodyTextStyle;
@@ -361,4 +370,42 @@ class TextMessageOptions {
 
   /// Additional matchers to parse the text.
   final List<MatchText> matchers;
+}
+
+/// Metadata への保存、呼び出し用.
+class Metadata {
+  Metadata({
+    this.textStyle = const TextStyle(),
+  });
+
+  Metadata.fromMap(Map<String, dynamic> map) {
+    if (map.containsKey(MessageMetadata.text.name)) {
+      final Map<String, dynamic> mapText = map[MessageMetadata.text.name];
+      Color? color;
+      double? fontSize;
+      if (mapText['color']) {
+        color = Color(int.parse(mapText['color'], radix: 16));
+      }
+      if (mapText['fontSize']) {
+        fontSize = mapText['fontSize'];
+      }
+      textStyle = TextStyle(
+        color: color,
+        fontSize: fontSize,
+      );
+    }
+  }
+
+  late TextStyle textStyle;
+
+  Map<String, dynamic> toMap() {
+    final mapText = {};
+    if (textStyle.color != null) {
+      mapText['color'] = textStyle.color!.value;
+    }
+    if (textStyle.fontSize != null) {
+      mapText['fontSize'] = textStyle.fontSize;
+    }
+    return {MessageMetadata.text.name: mapText};
+  }
 }

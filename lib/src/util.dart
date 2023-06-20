@@ -1,11 +1,9 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import 'package:flutter_chat_ui/src/widgets/input/painter.dart';
 import 'package:intl/intl.dart';
 
 import 'models/date_header.dart';
@@ -17,7 +15,8 @@ import 'models/unread_header_data.dart';
 // TODO:type化.
 // Message.Metadata 使用時の一番親階層のキー.
 enum MessageMetadata {
-  painter;
+  painter,
+  text;
 }
 
 enum TextMetadata {
@@ -62,8 +61,8 @@ String getUserInitials(types.User user) {
 }
 
 /// Returns user name as joined firstName and lastName.
-String getUserName(types.User user) =>
-    '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
+String getUserName(types.User user) => '${user.firstName ?? ''}'.trim();
+// '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
 
 /// Returns formatted date used as a divider between different days in the
 /// chat history
@@ -116,7 +115,7 @@ final isMobile = defaultTargetPlatform == TargetPlatform.android ||
 /// Parses provided messages to chat messages (with headers and spacers)
 /// and returns them with a gallery.
 List<Object> calculateChatMessages(
-  List<types.Message> messagesOrigin,
+  List<types.Message> messages,
   types.User user, {
   String Function(DateTime)? customDateHeaderText,
   DateFormat? dateFormat,
@@ -130,29 +129,8 @@ List<Object> calculateChatMessages(
 }) {
   final chatMessages = <Object>[];
   final gallery = <PreviewImage>[];
-  final painter = <dynamic>[];
 
   var shouldShowName = false;
-
-  // オリジナルのタイプの代わりにtextタイプを仮で使用.
-  // isFirst・isLast 等ずれないようにループの前にメッセージとして表示しないタイプの処理を行う.
-  // TODO:type化.
-  final messages = <types.Message>[]; // ループ用.
-  for (var msg in messagesOrigin) {
-    if (msg.type == types.MessageType.text && msg.metadata != null) {
-      // お絵描き.
-      if (msg.metadata!.containsKey(MessageMetadata.painter.name) &&
-          msg.metadata![MessageMetadata.painter.name] != null) {
-        painter.add(msg.metadata![MessageMetadata.painter.name]);
-        var m = msg.metadata![MessageMetadata.painter.name];
-        //print('msg.metadata![MessageMetadata.painter.name: $m');
-
-        //--- コメントアウト ---//
-        //continue;
-      }
-    }
-    messages.add(msg);
-  }
 
   for (var i = messages.length - 1; i >= 0; i--) {
     final isFirst = i == messages.length - 1;
@@ -306,5 +284,5 @@ List<Object> calculateChatMessages(
     }
   }
 
-  return [chatMessages, gallery, painter];
+  return [chatMessages, gallery];
 }

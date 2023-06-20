@@ -54,9 +54,7 @@ class ChatList extends StatefulWidget {
   /// Items to build.
   final List<Object> items;
 
-  //final Positioned painter;
   final Container painter;
-  //final Positioned loadPainter;
   final Function setScrollPosition;
 
   /// Used for pagination (infinite scroll). Called when user scrolls
@@ -108,6 +106,7 @@ class _ChatListState extends State<ChatList>
   double _topOffset = 0.0;
 
   final GlobalKey _key = GlobalKey();
+  final GlobalKey _emptyListKey = GlobalKey();
   double _height = 0;
   double screenHeight = 0;
 
@@ -124,17 +123,23 @@ class _ChatListState extends State<ChatList>
     //   });
     // });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.scrollController.animateTo(
-        MediaQuery.of(context).size.height,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      // widget.scrollController.jumpTo(
-      //   MediaQuery.of(context).size.height,
-      // );
-    });
+    //WidgetsBinding.instance.addPostFrameCallback((_) {
+    // widget.scrollController.animateTo(
+    //   MediaQuery.of(context).size.height,
+    //   duration: Duration(milliseconds: 1000),
+    //   curve: Curves.easeInOut,
+    // );
+    // widget.scrollController.jumpTo(
+    //   MediaQuery.of(context).size.height,
+    // );
+    //});
 
+    // WidgetsBinding.instance!.addPostFrameCallback((_) {
+    //   final RenderBox renderBox =
+    //       _emptyListKey.currentContext!.findRenderObject() as RenderBox;
+    //   final size = renderBox.size;
+    //   print('size: $size');
+    // });
     didUpdateWidget(widget);
   }
 
@@ -154,48 +159,48 @@ class _ChatListState extends State<ChatList>
   @override
   Widget build(BuildContext context) =>
       NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.metrics.pixels > 10.0 && !_indicatorOnScrollStatus) {
-            print('nortitification1');
-            setState(() {
-              _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
-            });
-          } else if (notification.metrics.pixels == 0.0 &&
-              _indicatorOnScrollStatus) {
-            print('nortitification2');
-            setState(() {
-              _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
-            });
-          }
+        //onNotification: (notification) {
+        // if (notification.metrics.pixels > 10.0 && !_indicatorOnScrollStatus) {
+        //   print('nortitification1');
+        //   setState(() {
+        //     _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
+        //   });
+        // } else if (notification.metrics.pixels == 0.0 &&
+        //     _indicatorOnScrollStatus) {
+        //   print('nortitification2');
+        //   setState(() {
+        //     _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
+        //   });
+        // }
 
-          if (widget.onEndReached == null || widget.isLastPage == true) {
-            return false;
-          }
+        // if (widget.onEndReached == null || widget.isLastPage == true) {
+        //   return false;
+        // }
 
-          if (notification.metrics.pixels >=
-              (notification.metrics.maxScrollExtent *
-                  (widget.onEndReachedThreshold ?? 0.75))) {
-            if (widget.items.isEmpty || _isNextPageLoading) return false;
+        // if (notification.metrics.pixels >=
+        //     (notification.metrics.maxScrollExtent *
+        //         (widget.onEndReachedThreshold ?? 0.75))) {
+        //   if (widget.items.isEmpty || _isNextPageLoading) return false;
 
-            // _controller.duration = Duration.zero;
-            //_controller.forward();
+        //   // _controller.duration = Duration.zero;
+        //   //_controller.forward();
 
-            setState(() {
-              _isNextPageLoading = true;
-            });
+        //   setState(() {
+        //     _isNextPageLoading = true;
+        //   });
 
-            widget.onEndReached!().whenComplete(() {
-              // _controller.duration = const Duration(milliseconds: 300);
-              //_controller.reverse();
+        //   widget.onEndReached!().whenComplete(() {
+        //     // _controller.duration = const Duration(milliseconds: 300);
+        //     //_controller.reverse();
 
-              setState(() {
-                _isNextPageLoading = false;
-              });
-            });
-          }
+        //     setState(() {
+        //       _isNextPageLoading = false;
+        //     });
+        //   });
+        // }
 
-          return false;
-        },
+        // return false;
+        //},
         child: Stack(
           //key: _key,
           children: [
@@ -209,12 +214,30 @@ class _ChatListState extends State<ChatList>
                   child: Container(
                     //height: 300,
                     height: MediaQuery.of(context).size.height,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      // border: Border(
+                      //   top: BorderSide(
+                      //     //color: Colors.black,
+                      //     color: Colors.black.withOpacity(.2),
+                      //     width: 1.0,
+                      //   ),
+                      // ),
+                    ),
                     //color: Colors.blue,
                     child: widget.isPenPressed ? widget.painter : null,
                   ),
                 ),
                 SliverToBoxAdapter(
+                  key: _emptyListKey,
                   child: widget.previewMessageBuilder(),
+                ),
+                SliverToBoxAdapter(
+                  child: Container(
+                    height: 100,
+                    color: Colors.grey[900],
+                    //key: _emptyListKey,
+                  ),
                 ),
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -231,6 +254,22 @@ class _ChatListState extends State<ChatList>
                 ),
               ],
             ),
+            // Positioned(
+            //   top: -500 + _topOffset,
+            //   left: 20,
+            //   height: 250,
+            //   width: 250,
+            //   child: Container(
+            //     width: 150,
+            //     height: 150,
+            //     color: Colors.green[300],
+            //     child: const Text(
+            //       '重ねるウィジェット',
+            //       style: TextStyle(color: Colors.white, fontSize: 20),
+            //     ),
+            //   ),
+            // ),
+
             // ListView.builder(
             //   physics: widget.scrollPhysics,
             //   controller: widget.scrollController,
