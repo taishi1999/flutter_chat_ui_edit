@@ -14,14 +14,19 @@ class Painter extends StatefulWidget {
   final PainterController painterController;
   final VoidCallback? onPanStart;
   final VoidCallback? onPanEnd;
+  final bool isLoadOnly;
 
   /// Creates an instance of this widget that operates on top of the supplied [PainterController].
   /// 指定した [PainterController] の上に動作するこのウィジェットのインスタンスを作成します。
-  Painter(PainterController painterController, VoidCallback? onPanStart,
-      VoidCallback? onPanEnd)
-      : this.painterController = painterController,
+  Painter({
+    required PainterController painterController,
+    VoidCallback? onPanStart,
+    VoidCallback? onPanEnd,
+    bool isLoadOnly = false,
+  })  : this.painterController = painterController,
         this.onPanStart = onPanStart,
         this.onPanEnd = onPanEnd,
+        this.isLoadOnly = isLoadOnly,
         super(key: new ValueKey<PainterController>(painterController));
 
   //final String test;
@@ -32,11 +37,13 @@ class Painter extends StatefulWidget {
 
 class _PainterState extends State<Painter> {
   bool _finished = false;
+  bool _isLoadOnly = false;
 
   @override
   void initState() {
     super.initState();
     widget.painterController._widgetFinish = _finish;
+    _isLoadOnly = widget.isLoadOnly;
   }
 
   Size _finish() {
@@ -54,7 +61,7 @@ class _PainterState extends State<Painter> {
           repaint: widget.painterController),
     );
     child = new ClipRect(child: child);
-    if (!_finished) {
+    if (!_finished && !_isLoadOnly) {
       child = new GestureDetector(
         child: child,
         onPanStart: _onPanStart,
@@ -70,7 +77,8 @@ class _PainterState extends State<Painter> {
   }
 
   void _onPanStart(DragStartDetails start) {
-    Offset pos = (context.findRenderObject() as RenderBox)
+    print('painter._onPanStart');
+    final Offset pos = (context.findRenderObject() as RenderBox)
         .globalToLocal(start.globalPosition);
     widget.painterController._pathHistory.add(pos);
     widget.painterController._notifyListeners();
@@ -79,7 +87,7 @@ class _PainterState extends State<Painter> {
   }
 
   void _onPanUpdate(DragUpdateDetails update) {
-    Offset pos = (context.findRenderObject() as RenderBox)
+    final Offset pos = (context.findRenderObject() as RenderBox)
         .globalToLocal(update.globalPosition);
     widget.painterController._pathHistory.updateCurrent(pos);
     widget.painterController._notifyListeners();
@@ -104,13 +112,15 @@ class _PainterPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_PainterPainter oldDelegate) {
-    return true;
+    return false;
   }
 }
 
 class _PathHistory {
   List<MapEntry<Path, Paint>> _paths;
   List<MapEntry<Path, Paint>> undoPaths = <MapEntry<Path, Paint>>[];
+  List<List<Offset>> _offsets;
+  List<List<Offset>> undoOffsets = [];
 
   Paint currentPaint;
   Paint _backgroundPaint;
@@ -122,6 +132,7 @@ class _PathHistory {
 
   _PathHistory()
       : _paths = <MapEntry<Path, Paint>>[],
+        _offsets = [],
         _inDrag = false,
         _backgroundPaint = new Paint()..blendMode = BlendMode.dstOver,
         currentPaint = new Paint()
@@ -139,6 +150,8 @@ class _PathHistory {
       //paths.last
       undoPaths.add(_paths.last);
       _paths.removeLast();
+      undoOffsets.add(_offsets.last);
+      _offsets.removeLast();
     }
   }
 
@@ -146,6 +159,8 @@ class _PathHistory {
     if (!_inDrag && undoPaths.length > 0) {
       _paths.add(undoPaths.last);
       undoPaths.removeLast();
+      _offsets.add(undoOffsets.last);
+      undoOffsets.removeLast();
     }
   }
 
@@ -153,43 +168,48 @@ class _PathHistory {
     if (!_inDrag) {
       _paths.clear();
       undoPaths.clear();
+      _offsets.clear();
+      undoOffsets.clear();
     }
   }
 
   void add(Offset startPoint) {
     if (!_inDrag) {
       _inDrag = true;
-      Path path = new Path();
+      final Path path = new Path();
       path.moveTo(startPoint.dx, startPoint.dy);
       _paths.add(new MapEntry<Path, Paint>(path, currentPaint));
+      _offsets.add([startPoint]);
       //点の描画
       path.addOval(Rect.fromCircle(
-          center: Offset(startPoint.dx, startPoint.dy), radius: 1));
+        center: Offset(startPoint.dx, startPoint.dy),
+        radius: 1,
+      ));
     }
   }
 
   void updateCurrent(Offset nextPoint) {
     if (_inDrag) {
-      Path path = _paths.last.key;
-      //print('path : $_paths.last.key');
+      final Path path = _paths.last.key;
       path.lineTo(nextPoint.dx, nextPoint.dy);
+      _offsets.last.add(nextPoint);
     }
   }
 
   void endCurrent() {
     _inDrag = false;
-    //print(_paths);
   }
 
   void draw(Canvas canvas, Size size) {
     canvas.saveLayer(Offset.zero & size, Paint());
     for (MapEntry<Path, Paint> path in _paths) {
-      Paint p = path.value;
+      final Paint p = path.value;
       canvas.drawPath(path.key, p);
-      //print('aaaa');
     }
     canvas.drawRect(
-        new Rect.fromLTWH(0.0, 0.0, size.width, size.height), _backgroundPaint);
+      new Rect.fromLTWH(0.0, 0.0, size.width, size.height),
+      _backgroundPaint,
+    );
     canvas.restore();
   }
 }
@@ -216,9 +236,11 @@ class PictureDetails {
   /// This might throw a [FlutterError], if flutter is not able to convert
   /// the intermediate [Image] to a PNG.
   Future<Uint8List> toPNG() async {
-    Image image = await toImage();
-    ByteData? data = await image.toByteData(format: ImageByteFormat.png);
+    final Image image = await toImage();
+    final ByteData? data = await image.toByteData(format: ImageByteFormat.png);
     if (data != null) {
+      var a = data.buffer.asUint8List();
+      print('data.buffer.asUint8List(): $a');
       return data.buffer.asUint8List();
     } else {
       throw new FlutterError('Flutter failed to convert an Image to bytes!');
@@ -239,8 +261,14 @@ class PainterController extends ChangeNotifier {
   _PathHistory _pathHistory;
   ValueGetter<Size>? _widgetFinish;
 
+  // Mapdataから取得した高さ.
+  double _heightFromMapData = 0;
+
   /// [Painter] ウィジェットで使用するために新しいインスタンスを作成する。
   PainterController() : _pathHistory = new _PathHistory();
+
+  /// 高さの取得.
+  double get heightFromMapData => _heightFromMapData;
 
   /// まだ何も描画されていない場合、true を返す。
   bool get isEmpty => _pathHistory.isEmpty;
@@ -298,11 +326,72 @@ class PainterController extends ChangeNotifier {
     _updatePaint();
   }
 
+  /// 保存用情報を取得.
+  Map<String, dynamic> toMap() {
+    late double lowestPathPoint = 0;
+    final listResult = [];
+    for (var i = 0; i < _pathHistory._paths.length; i++) {
+      final paint = _pathHistory._paths[i].value;
+      final listType = ListType(paint);
+      for (final offset in _pathHistory._offsets[i]) {
+        listType.addOffset(offset);
+
+        if (lowestPathPoint < offset.dy) {
+          lowestPathPoint = offset.dy + paint.strokeWidth + 8;
+        }
+      }
+      listResult.add(listType.toMap());
+    }
+
+    /// 高さを↑で計算して↓でセット.
+    return {
+      'height': lowestPathPoint,
+      'list': listResult,
+    };
+  }
+
+  /// 保存用情報から復元新旧フォーマット対応版.
+  PainterController fromMetaData(dynamic metadata) =>
+      (metadata is List) ? fromList(metadata) : fromMap(metadata);
+
+  /// 保存用情報から復元旧フォーマットのデータがない環境では不要 .
+  PainterController fromList(List<dynamic> list) => fromMap({
+        'height': 77, // エラー回避のため旧データは仮で77で固定.
+        'list': list,
+      });
+
+  /// 保存用情報から復元新フォーマット .
+  PainterController fromMap(Map<String, dynamic> mapMetadata) {
+    _heightFromMapData = mapMetadata['height'].toDouble();
+
+    // CustomPaint fromList(List<dynamic> list) {
+    for (final Map<String, dynamic> map in mapMetadata['list']) {
+      final listType = ListType.fromMap(map);
+      final paint = listType.getPaint();
+      drawColor = paint.color;
+      thickness = paint.strokeWidth;
+      _pathHistory.currentPaint = paint;
+      var isAdded = false;
+      for (final offset in listType.getOffsetList()) {
+        if (isAdded) {
+          _pathHistory.updateCurrent(offset);
+        } else {
+          _pathHistory.add(offset);
+          isAdded = true;
+        }
+      }
+      _pathHistory.endCurrent();
+    }
+    isEmpty = false;
+    _notifyListeners();
+    return this;
+  }
+
   void _updatePaint() {
-    Paint paint = new Paint();
+    final paint = Paint();
     if (_eraseMode) {
       paint.blendMode = BlendMode.clear;
-      paint.color = Color.fromARGB(0, 255, 0, 0);
+      paint.color = const Color.fromARGB(0, 255, 0, 0);
     } else {
       paint.color = drawColor;
       paint.blendMode = BlendMode.srcOver;
@@ -320,6 +409,7 @@ class PainterController extends ChangeNotifier {
   /// 画像がすでに完成している場合は、この操作は無効で何も行いません。
   void undo() {
     if (!isFinished()) {
+      print('undo実行');
       _pathHistory.undo();
       notifyListeners();
     }
@@ -360,7 +450,8 @@ class PainterController extends ChangeNotifier {
         _cached = _render(_widgetFinish!());
       } else {
         throw new StateError(
-            'Called finish on a PainterController that was not connected to a widget yet!');
+          'Called finish on a PainterController that was not connected to a widget yet!',
+        );
       }
     }
     return _cached!;
@@ -370,11 +461,14 @@ class PainterController extends ChangeNotifier {
     if (size.isEmpty) {
       throw new StateError('Tried to render a picture with an invalid size!');
     } else {
-      PictureRecorder recorder = new PictureRecorder();
-      Canvas canvas = new Canvas(recorder);
+      final PictureRecorder recorder = new PictureRecorder();
+      final Canvas canvas = new Canvas(recorder);
       _pathHistory.draw(canvas, size);
       return new PictureDetails(
-          recorder.endRecording(), size.width.floor(), size.height.floor());
+        recorder.endRecording(),
+        size.width.floor(),
+        size.height.floor(),
+      );
     }
   }
 
@@ -384,4 +478,128 @@ class PainterController extends ChangeNotifier {
   bool isFinished() {
     return _cached != null;
   }
+}
+
+/// 保存・復元時のList用クラス.
+class ListType {
+  ListType(Paint paint) {
+    setPaint(paint);
+  }
+  ListType.fromMap(Map<String, dynamic> map) {
+    _paint = ListTypePaint.fromMap(map['paint']);
+    for (Map<String, dynamic> offsetMap in map['offsetList']) {
+      _offsetList.add(ListTypeOffset.fromMap(offsetMap));
+    }
+  }
+
+  ListTypePaint? _paint;
+  final List<ListTypeOffset> _offsetList = [];
+
+  Paint getPaint() => _paint!.toPaint();
+
+  void setPaint(Paint paint) {
+    _paint = ListTypePaint(paint);
+  }
+
+  List<Offset> getOffsetList() {
+    final offsetList = <Offset>[];
+    for (final offset in _offsetList) {
+      offsetList.add(offset.toOffset());
+    }
+    return offsetList;
+  }
+
+  void addOffset(Offset offset) {
+    _offsetList.add(ListTypeOffset(offset));
+  }
+
+  Map<String, dynamic> toMap() {
+    final offsetMap = [];
+    for (var offset in _offsetList) {
+      offsetMap.add(offset.toMap());
+    }
+    return {
+      'paint': _paint!.toMap(),
+      'offsetList': offsetMap,
+    };
+  }
+}
+
+/// 保存・復元時のList用Paintサブクラス.
+class ListTypePaint {
+  ListTypePaint(Paint paint) {
+    _color = paint.color;
+    _strokeWidth = paint.strokeWidth;
+    _strokeCap = paint.strokeCap;
+    _strokeJoin = paint.strokeJoin;
+    _style = paint.style;
+    _blendMode = paint.blendMode;
+  }
+
+  ListTypePaint.fromMap(Map<String, dynamic> map) {
+    if (map.containsKey('color')) {
+      _color = Color(map['color']);
+    }
+    if (map.containsKey('strokeWidth')) {
+      _strokeWidth = map['strokeWidth'].toDouble();
+    }
+    if (map.containsKey('strokeCap')) {
+      _strokeCap = StrokeCap.values.byName(map['strokeCap']);
+    }
+    if (map.containsKey('strokeJoin')) {
+      _strokeJoin = StrokeJoin.values.byName(map['strokeJoin']);
+    }
+    if (map.containsKey('style')) {
+      _style = PaintingStyle.values.byName(map['style']);
+    }
+    if (map.containsKey('blendMode')) {
+      _blendMode = BlendMode.values.byName(map['blendMode']);
+    }
+  }
+
+  Color _color = Colors.black;
+  double _strokeWidth = 2.0;
+  StrokeCap _strokeCap = StrokeCap.round;
+  StrokeJoin _strokeJoin = StrokeJoin.round;
+  PaintingStyle _style = PaintingStyle.fill;
+  BlendMode _blendMode = BlendMode.srcOver;
+
+  Paint toPaint() {
+    final paint = Paint();
+    paint.color = _color;
+    paint.strokeWidth = _strokeWidth;
+    paint.strokeCap = _strokeCap;
+    paint.strokeJoin = _strokeJoin;
+    paint.style = _style;
+    paint.blendMode = _blendMode;
+    return paint;
+  }
+
+  Map<String, dynamic> toMap() => {
+        'color': _color.value,
+        'strokeWidth': _strokeWidth.toDouble(),
+        'strokeCap': _strokeCap.name,
+        'strokeJoin': _strokeJoin.name,
+        'style': _style.name,
+        'blendMode': _blendMode.name,
+      };
+}
+
+/// 保存・復元時のList用Offsetサブクラス.
+class ListTypeOffset {
+  ListTypeOffset(Offset offset) {
+    _dx = offset.dx;
+    _dy = offset.dy;
+  }
+  ListTypeOffset.fromMap(Map<String, dynamic> map) {
+    _dx = map['dx']!;
+    _dy = map['dy']!;
+  }
+
+  double _dx = 0;
+  double _dy = 0;
+
+  Offset toOffset() => Offset(_dx, _dy);
+
+  Map<String, double> toMap() => {'dx': _dx, 'dy': _dy};
 }

@@ -54,13 +54,25 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) => Scaffold(
         appBar: _isAppBarVisible
             ? AppBar(
+                // leading: Image(
+                //   image: AssetImage('assets/icon-undo.png'),
+                //   color: Colors.black,
+                // ),
+                leading: Image.asset('assets/icon-pen.png'),
                 backgroundColor: neutral0,
                 title: const Text('friends'),
               )
             : null,
         body: Chat(
+          // undoIcon: Image(
+          //   image: AssetImage('assets/icon-undo.png'),
+          //   color: Colors.black,
+          // ),
+          //penIcon: AssetImage('assets/icon-pen.png'),
           messages: _messages,
-          onAttachmentPressed: _handleAttachmentPressed,
+
+          onAttachmentPressed: _handleImageSelection,
+          //onAttachmentPressed: _handleAttachmentPressed,
           onPenPressed: _handlePenPressed,
           //onCheckPressed:_handlePenPressed,
           onMessageTap: _handleMessageTap,
@@ -68,6 +80,9 @@ class _ChatPageState extends State<ChatPage> {
           onSendPressed: _handleSendPressed,
           showUserAvatars: true,
           showUserNames: true,
+          scrollPhysics: _isAppBarVisible
+              ? ClampingScrollPhysics()
+              : NeverScrollableScrollPhysics(),
           user: _user,
         ),
       );
@@ -78,10 +93,15 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  void _handlePenPressed() {
+  void _handlePenPressed([Map<String, dynamic>? saveValue]) {
     setState(() {
       _isAppBarVisible = !_isAppBarVisible;
     });
+    if (saveValue != null) {
+      for (var i = 0; i < saveValue.length; i++) {
+        print(saveValue[i]);
+      }
+    }
 
     print('penが押されたよーー _isAppBarVisible: $_isAppBarVisible');
     //return PenPress;
@@ -226,13 +246,15 @@ class _ChatPageState extends State<ChatPage> {
     types.PreviewData previewData,
   ) {
     final index = _messages.indexWhere((element) => element.id == message.id);
-    final updatedMessage = (_messages[index] as types.TextMessage).copyWith(
-      previewData: previewData,
-    );
+    if (index != -1) {
+      final updatedMessage = (_messages[index] as types.TextMessage).copyWith(
+        previewData: previewData,
+      );
 
-    setState(() {
-      _messages[index] = updatedMessage;
-    });
+      setState(() {
+        _messages[index] = updatedMessage;
+      });
+    }
   }
 
   void _handleSendPressed(types.PartialText message) {

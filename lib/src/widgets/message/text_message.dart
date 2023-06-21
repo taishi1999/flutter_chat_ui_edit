@@ -61,7 +61,8 @@ class TextMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final enlargeEmojis =
         emojiEnlargementBehavior != EmojiEnlargementBehavior.never &&
-            isConsistsOfEmojis(emojiEnlargementBehavior, message);
+            isConsistsOfEmojis(emojiEnlargementBehavior, message) &&
+            !isChangedFontSize();
     final theme = InheritedChatTheme.of(context).theme;
     final user = InheritedUser.of(context).user;
     final width = MediaQuery.of(context).size.width;
@@ -71,17 +72,36 @@ class TextMessage extends StatelessWidget {
       final matches = urlRegexp.allMatches(message.text);
 
       if (matches.isNotEmpty) {
-        return _linkPreview(user, width, context);
+        print('matches.isNotEmpty');
+
+        //return _linkPreview(user, width, context);
+      } else {
+        print('matches.isEmpty');
       }
     }
 
     return Container(
+      //★テキストのmargin
       margin: EdgeInsets.symmetric(
-        horizontal: theme.messageInsetsHorizontal,
+        //horizontal: theme.messageInsetsHorizontal,
+
         vertical: theme.messageInsetsVertical,
       ),
       child: _textWidgetBuilder(user, context, enlargeEmojis),
     );
+  }
+
+  bool isChangedFontSize() {
+    if (message.metadata![TextMetadata.fontsize.name] != null) {
+      if (message.metadata![TextMetadata.fontsize.name].toDouble() != 16) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+    ;
   }
 
   Widget _linkPreview(
@@ -138,9 +158,24 @@ class TextMessage extends StatelessWidget {
     final bodyLinkTextStyle = user.id == message.author.id
         ? InheritedChatTheme.of(context).theme.sentMessageBodyLinkTextStyle
         : InheritedChatTheme.of(context).theme.receivedMessageBodyLinkTextStyle;
-    final bodyTextStyle = user.id == message.author.id
-        ? theme.sentMessageBodyTextStyle
-        : theme.receivedMessageBodyTextStyle;
+    //final bodyTextStyle = user.id == message.author.id
+    final bodyTextStyle = message.metadata != null
+        ? theme.sentMessageBodyTextStyle.copyWith(
+            color: message.metadata![TextMetadata.color.name] != null &&
+                    message.metadata![TextMetadata.color.name] is int
+                ? Color(message.metadata![TextMetadata.color.name])
+                : theme.sentMessageBodyTextStyle.color,
+            fontSize: message.metadata![TextMetadata.fontsize.name] != null
+                ? message.metadata![TextMetadata.fontsize.name].toDouble()
+                : theme.sentMessageBodyTextStyle.fontSize,
+            fontWeight: message.metadata![TextMetadata.fontsize.name] != null
+                ? message.metadata![TextMetadata.fontsize.name].toDouble() > 20
+                    ? FontWeight.bold
+                    : FontWeight.normal
+                : FontWeight.normal,
+          )
+        : theme.sentMessageBodyTextStyle;
+    //: theme.receivedMessageBodyTextStyle;
     final boldTextStyle = user.id == message.author.id
         ? theme.sentMessageBodyBoldTextStyle
         : theme.receivedMessageBodyBoldTextStyle;
@@ -335,4 +370,42 @@ class TextMessageOptions {
 
   /// Additional matchers to parse the text.
   final List<MatchText> matchers;
+}
+
+/// Metadata への保存、呼び出し用.
+class Metadata {
+  Metadata({
+    this.textStyle = const TextStyle(),
+  });
+
+  Metadata.fromMap(Map<String, dynamic> map) {
+    if (map.containsKey(MessageMetadata.text.name)) {
+      final Map<String, dynamic> mapText = map[MessageMetadata.text.name];
+      Color? color;
+      double? fontSize;
+      if (mapText['color']) {
+        color = Color(int.parse(mapText['color'], radix: 16));
+      }
+      if (mapText['fontSize']) {
+        fontSize = mapText['fontSize'];
+      }
+      textStyle = TextStyle(
+        color: color,
+        fontSize: fontSize,
+      );
+    }
+  }
+
+  late TextStyle textStyle;
+
+  Map<String, dynamic> toMap() {
+    final mapText = {};
+    if (textStyle.color != null) {
+      mapText['color'] = textStyle.color!.value;
+    }
+    if (textStyle.fontSize != null) {
+      mapText['fontSize'] = textStyle.fontSize;
+    }
+    return {MessageMetadata.text.name: mapText};
+  }
 }

@@ -1,6 +1,6 @@
 import 'dart:math';
-import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
@@ -11,6 +11,18 @@ import 'models/emoji_enlargement_behavior.dart';
 import 'models/message_spacer.dart';
 import 'models/preview_image.dart';
 import 'models/unread_header_data.dart';
+
+// TODO:type化.
+// Message.Metadata 使用時の一番親階層のキー.
+enum MessageMetadata {
+  painter,
+  text;
+}
+
+enum TextMetadata {
+  color,
+  fontsize;
+}
 
 /// Returns text representation of a provided bytes value (e.g. 1kB, 1GB).
 String formatBytes(int size, [int fractionDigits = 2]) {
@@ -49,8 +61,8 @@ String getUserInitials(types.User user) {
 }
 
 /// Returns user name as joined firstName and lastName.
-String getUserName(types.User user) =>
-    '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
+String getUserName(types.User user) => '${user.firstName ?? ''}'.trim();
+// '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
 
 /// Returns formatted date used as a divider between different days in the
 /// chat history

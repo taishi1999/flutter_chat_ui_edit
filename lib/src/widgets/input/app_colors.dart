@@ -5,10 +5,10 @@ class AppColors {
   static const defaultColors = [
     Colors.white,
     Colors.black,
+    Colors.red,
     Colors.blue,
     Colors.green,
     Colors.orange,
-    Colors.red,
     Colors.pink,
     //Colors.purple,
     Colors.deepPurple,

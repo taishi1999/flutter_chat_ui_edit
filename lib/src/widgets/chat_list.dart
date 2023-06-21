@@ -17,7 +17,12 @@ class ChatList extends StatefulWidget {
     required this.bubbleRtlAlignment,
     this.isLastPage,
     required this.itemBuilder,
+    required this.previewMessageBuilder,
     required this.items,
+    required this.painter,
+    required this.isPenPressed,
+    //required this.loadPainter,
+    required this.setScrollPosition,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
     this.onEndReached,
     this.onEndReachedThreshold,
@@ -39,11 +44,18 @@ class ChatList extends StatefulWidget {
   /// pagination will not be triggered.
   final bool? isLastPage;
 
+  final bool isPenPressed;
+
   /// Item builder.
   final Widget Function(Object, int? index) itemBuilder;
 
+  final Widget Function() previewMessageBuilder;
+
   /// Items to build.
   final List<Object> items;
+
+  final Container painter;
+  final Function setScrollPosition;
 
   /// Used for pagination (infinite scroll). Called when user scrolls
   /// to the very end of the list (minus [onEndReachedThreshold]).
@@ -80,30 +92,54 @@ class ChatList extends StatefulWidget {
 /// [ChatList] widget state.
 class _ChatListState extends State<ChatList>
     with SingleTickerProviderStateMixin {
-  late final Animation<double> _animation = CurvedAnimation(
-    curve: Curves.easeOutQuad,
-    parent: _controller,
-  );
-  late final AnimationController _controller = AnimationController(vsync: this);
+  // late final Animation<double> _animation = CurvedAnimation(
+  //   curve: Curves.easeOutQuad,
+  //   parent: _controller,
+  // );
+  //late final AnimationController _controller = AnimationController(vsync: this);
 
   bool _indicatorOnScrollStatus = false;
   bool _isNextPageLoading = false;
   final GlobalKey<PatchedSliverAnimatedListState> _listKey =
       GlobalKey<PatchedSliverAnimatedListState>();
   late List<Object> _oldData = List.from(widget.items);
+  double _topOffset = 0.0;
 
   final GlobalKey _key = GlobalKey();
+  final GlobalKey _emptyListKey = GlobalKey();
   double _height = 0;
+  double screenHeight = 0;
+
+  ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    // widget.scrollController.addListener(() {
+    //   setState(() {
+    //     _topOffset = widget.scrollController.offset;
+    //     widget.setScrollPosition(_topOffset);
+    //     //print('topOffset: $_topOffset');
+    //   });
+    // });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _height = _key.currentContext!.size!.height;
-      print('CustomScrollView height: $_height');
-    });
+    //WidgetsBinding.instance.addPostFrameCallback((_) {
+    // widget.scrollController.animateTo(
+    //   MediaQuery.of(context).size.height,
+    //   duration: Duration(milliseconds: 1000),
+    //   curve: Curves.easeInOut,
+    // );
+    // widget.scrollController.jumpTo(
+    //   MediaQuery.of(context).size.height,
+    // );
+    //});
 
+    // WidgetsBinding.instance!.addPostFrameCallback((_) {
+    //   final RenderBox renderBox =
+    //       _emptyListKey.currentContext!.findRenderObject() as RenderBox;
+    //   final size = renderBox.size;
+    //   print('size: $size');
+    // });
     didUpdateWidget(widget);
   }
 
@@ -116,178 +152,281 @@ class _ChatListState extends State<ChatList>
 
   @override
   void dispose() {
-    _controller.dispose();
+    //_controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) =>
       NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.metrics.pixels > 10.0 && !_indicatorOnScrollStatus) {
-            setState(() {
-              _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
-            });
-          } else if (notification.metrics.pixels == 0.0 &&
-              _indicatorOnScrollStatus) {
-            setState(() {
-              _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
-            });
-          }
+        //onNotification: (notification) {
+        // if (notification.metrics.pixels > 10.0 && !_indicatorOnScrollStatus) {
+        //   print('nortitification1');
+        //   setState(() {
+        //     _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
+        //   });
+        // } else if (notification.metrics.pixels == 0.0 &&
+        //     _indicatorOnScrollStatus) {
+        //   print('nortitification2');
+        //   setState(() {
+        //     _indicatorOnScrollStatus = !_indicatorOnScrollStatus;
+        //   });
+        // }
 
-          if (widget.onEndReached == null || widget.isLastPage == true) {
-            return false;
-          }
+        // if (widget.onEndReached == null || widget.isLastPage == true) {
+        //   return false;
+        // }
 
-          if (notification.metrics.pixels >=
-              (notification.metrics.maxScrollExtent *
-                  (widget.onEndReachedThreshold ?? 0.75))) {
-            if (widget.items.isEmpty || _isNextPageLoading) return false;
+        // if (notification.metrics.pixels >=
+        //     (notification.metrics.maxScrollExtent *
+        //         (widget.onEndReachedThreshold ?? 0.75))) {
+        //   if (widget.items.isEmpty || _isNextPageLoading) return false;
 
-            _controller.duration = Duration.zero;
-            _controller.forward();
+        //   // _controller.duration = Duration.zero;
+        //   //_controller.forward();
 
-            setState(() {
-              _isNextPageLoading = true;
-            });
+        //   setState(() {
+        //     _isNextPageLoading = true;
+        //   });
 
-            widget.onEndReached!().whenComplete(() {
-              _controller.duration = const Duration(milliseconds: 300);
-              _controller.reverse();
+        //   widget.onEndReached!().whenComplete(() {
+        //     // _controller.duration = const Duration(milliseconds: 300);
+        //     //_controller.reverse();
 
-              setState(() {
-                _isNextPageLoading = false;
-              });
-            });
-          }
+        //     setState(() {
+        //       _isNextPageLoading = false;
+        //     });
+        //   });
+        // }
 
-          return false;
-        },
-        child: SingleChildScrollView(
-          child: SizedBox(
-            height: 1500,
-            child: Stack(
-              key: _key,
-              children: [
-                Positioned(
-                  top: 0,
+        // return false;
+        //},
+        child: Stack(
+          //key: _key,
+          children: [
+            CustomScrollView(
+              keyboardDismissBehavior: widget.keyboardDismissBehavior,
+              physics: widget.scrollPhysics,
+              controller: widget.scrollController,
+              reverse: true,
+              slivers: [
+                SliverToBoxAdapter(
                   child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    child: CustomScrollView(
-                      shrinkWrap: true,
-                      controller: widget.scrollController,
-                      keyboardDismissBehavior: widget.keyboardDismissBehavior,
-                      physics: widget.scrollPhysics,
-                      reverse: true,
-                      slivers: [
-                        if (widget.bottomWidget != null)
-                          SliverToBoxAdapter(child: widget.bottomWidget),
-                        SliverPadding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          sliver: SliverToBoxAdapter(
-                            child: widget.typingIndicatorOptions
-                                    ?.customTypingIndicator ??
-                                TypingIndicator(
-                                  bubbleAlignment: widget.bubbleRtlAlignment,
-                                  options: widget.typingIndicatorOptions!,
-                                  showIndicator: (widget.typingIndicatorOptions!
-                                          .typingUsers.isNotEmpty &&
-                                      !_indicatorOnScrollStatus),
-                                ),
-                          ),
-                        ),
-                        // SliverPadding(
-                        //   padding: const EdgeInsets.only(bottom: 4),
-                        //   sliver: SliverToBoxAdapter(
-                        //     child: widget.itemBuilder(_oldData[6], 5),
-                        //   ),
-                        // ),
-                        SliverPadding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          sliver: PatchedSliverAnimatedList(
-                            findChildIndexCallback: (Key key) {
-                              if (key is ValueKey<Object>) {
-                                final newIndex = widget.items.indexWhere(
-                                  (v) => _valueKeyForItem(v) == key,
-                                );
-                                if (newIndex != -1) {
-                                  return newIndex;
-                                }
-                              }
-                              return null;
-                            },
-                            initialItemCount: widget.items.length,
-                            key: _listKey,
-                            itemBuilder: (_, index, animation) =>
-                                _newMessageBuilder(index, animation),
-                          ),
-                        ),
-                        SliverPadding(
-                          padding: EdgeInsets.only(
-                            top: 16 +
-                                (widget.useTopSafeAreaInset
-                                    ? MediaQuery.of(context).padding.top
-                                    : 0),
-                          ),
-                          sliver: SliverToBoxAdapter(
-                            child: SizeTransition(
-                              axisAlignment: 1,
-                              sizeFactor: _animation,
-                              child: Center(
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  height: 32,
-                                  width: 32,
-                                  child: SizedBox(
-                                    height: 16,
-                                    width: 16,
-                                    child: _isNextPageLoading
-                                        ? CircularProgressIndicator(
-                                            backgroundColor: Colors.transparent,
-                                            strokeWidth: 1.5,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                              InheritedChatTheme.of(context)
-                                                  .theme
-                                                  .primaryColor,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    //height: 300,
+                    height: MediaQuery.of(context).size.height,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      // border: Border(
+                      //   top: BorderSide(
+                      //     //color: Colors.black,
+                      //     color: Colors.black.withOpacity(.2),
+                      //     width: 1.0,
+                      //   ),
+                      // ),
                     ),
+                    //color: Colors.blue,
+                    child: widget.isPenPressed ? widget.painter : null,
                   ),
                 ),
-                // Container(
-                //   height: 700,
-                //   child: Stack(
-                //     children: [
-                //       Positioned(
-                //         top: 200,
-                //         left: 20,
-                //         height: 250,
-                //         width: 250,
-                //         child: Container(
-                //           width: 150,
-                //           height: 150,
-                //           color: Colors.green[300],
-                //           child: const Text(
-                //             '重ねるウィジェット',
-                //             style: TextStyle(color: Colors.white, fontSize: 20),
-                //           ),
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                // ),
+                SliverToBoxAdapter(
+                  key: _emptyListKey,
+                  child: widget.previewMessageBuilder(),
+                ),
+                SliverToBoxAdapter(
+                  child: Container(
+                    height: 100,
+                    color: Colors.grey[900],
+                    //key: _emptyListKey,
+                  ),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, index) {
+                      //final message = widget.items[index];
+                      return _newMessageBuilder(
+                        index,
+                        AlwaysStoppedAnimation<double>(1),
+                      );
+                    },
+                    childCount: widget.items.length,
+                  ),
+                  key: _listKey,
+                ),
               ],
             ),
-          ),
+            // Positioned(
+            //   top: -500 + _topOffset,
+            //   left: 20,
+            //   height: 250,
+            //   width: 250,
+            //   child: Container(
+            //     width: 150,
+            //     height: 150,
+            //     color: Colors.green[300],
+            //     child: const Text(
+            //       '重ねるウィジェット',
+            //       style: TextStyle(color: Colors.white, fontSize: 20),
+            //     ),
+            //   ),
+            // ),
+
+            // ListView.builder(
+            //   physics: widget.scrollPhysics,
+            //   controller: widget.scrollController,
+            //   reverse: true,
+            //   padding: const EdgeInsets.only(bottom: 0),
+            //   itemCount: widget.items.length,
+            //   key: _listKey,
+            //   itemBuilder: (_, index) {
+            //     //final message = widget.items[index];
+            //     return _newMessageBuilder(
+            //       index,
+            //       AlwaysStoppedAnimation<double>(1),
+            //     );
+            //   },
+            //   findChildIndexCallback: (Key key) {
+            //     if (key is ValueKey<Object>) {
+            //       final newIndex = widget.items.indexWhere(
+            //         (v) => _valueKeyForItem(v) == key,
+            //       );
+            //       if (newIndex != -1) {
+            //         return newIndex;
+            //       }
+            //     }
+            //     return null;
+            //   },
+            // ),
+
+            // CustomScrollView(
+            //   shrinkWrap: true,
+            //   controller: _scrollController,
+            //   //controller: widget.scrollController,
+            //   keyboardDismissBehavior: widget.keyboardDismissBehavior,
+            //   physics: widget.scrollPhysics,
+            //   reverse: true,
+            //   slivers: [
+            //     // if (widget.bottomWidget != null)
+            //     //   SliverToBoxAdapter(child: widget.bottomWidget),
+            //     // SliverPadding(
+            //     //   padding: const EdgeInsets.only(bottom: 4),
+            //     //   sliver: SliverToBoxAdapter(
+            //     //     child:
+            //     //         widget.typingIndicatorOptions?.customTypingIndicator ??
+            //     //             TypingIndicator(
+            //     //               bubbleAlignment: widget.bubbleRtlAlignment,
+            //     //               options: widget.typingIndicatorOptions!,
+            //     //               showIndicator: (widget.typingIndicatorOptions!
+            //     //                       .typingUsers.isNotEmpty &&
+            //     //                   !_indicatorOnScrollStatus),
+            //     //             ),
+            //     //   ),
+            //     // ),
+            //     // SliverPadding(
+            //     //   padding: const EdgeInsets.only(bottom: 4),
+            //     //   sliver: SliverToBoxAdapter(
+            //     //     child: widget.itemBuilder(_oldData[6], 5),
+            //     //   ),
+            //     // ),]
+
+            //     SliverToBoxAdapter(
+            //       child: Container(
+            //         //height: 300,
+            //         height: MediaQuery.of(context).size.height,
+            //         color: Colors.blue,
+            //         child: widget.isPenPressed ? widget.painter : null,
+            //       ),
+            //     ),
+            //     // SliverToBoxAdapter(
+            //     //   child: widget.previewMessageBuilder(),
+            //     // ),
+            //     SliverPadding(
+            //       padding: const EdgeInsets.only(bottom: 4),
+            //       sliver: PatchedSliverAnimatedList(
+            //         findChildIndexCallback: (Key key) {
+            //           if (key is ValueKey<Object>) {
+            //             final newIndex = widget.items.indexWhere(
+            //               (v) => _valueKeyForItem(v) == key,
+            //             );
+            //             if (newIndex != -1) {
+            //               return newIndex;
+            //             }
+            //           }
+            //           return null;
+            //         },
+            //         initialItemCount: widget.items.length,
+            //         key: _listKey,
+            //         itemBuilder: (_, index, animation) =>
+            //             _newMessageBuilder(index, animation),
+            //       ),
+            //     ),
+            //     // SliverPadding(
+            //     //   padding: EdgeInsets.only(
+            //     //     top: 16 +
+            //     //         (widget.useTopSafeAreaInset
+            //     //             ? MediaQuery.of(context).padding.top
+            //     //             : 0),
+            //     //   ),
+            //     //   sliver: SliverToBoxAdapter(
+            //     //     child: SizeTransition(
+            //     //       axisAlignment: 1,
+            //     //       sizeFactor: _animation,
+            //     //       child: Center(
+            //     //         child: Container(
+            //     //           alignment: Alignment.center,
+            //     //           height: 32,
+            //     //           width: 32,
+            //     //           child: SizedBox(
+            //     //             height: 16,
+            //     //             width: 16,
+            //     //             child: _isNextPageLoading
+            //     //                 ? CircularProgressIndicator(
+            //     //                     backgroundColor: Colors.transparent,
+            //     //                     strokeWidth: 1.5,
+            //     //                     valueColor: AlwaysStoppedAnimation<Color>(
+            //     //                       InheritedChatTheme.of(context)
+            //     //                           .theme
+            //     //                           .primaryColor,
+            //     //                     ),
+            //     //                   )
+            //     //                 : null,
+            //     //           ),
+            //     //         ),
+            //     //       ),
+            //     //     ),
+            //     //   ),
+            //     // ),
+            //   ],
+            // ),
+
+            //widget.loadPainter,
+            //widget.painter,
+
+            // Container(
+            //   // height: 1000,
+            //   child: Stack(
+            //     fit: StackFit.passthrough,
+            //     children: [
+            //       widget.loadPainter,
+            //       // widget.painter,
+            //       // Positioned(
+            //       //   top: 200,
+            //       //   left: 20,
+            //       //   height: 250,
+            //       //   width: 250,
+            //       // child: Container(
+            //       //   width: 150,
+            //       //   height: 150,
+            //       //   color: Colors.green[300],
+            //       //   child: const Text(
+            //       //     '重ねるウィジェット',
+            //       //     style: TextStyle(color: Colors.white, fontSize: 20),
+            //       //   ),
+            //       // ),
+            //       // ),
+            //     ],
+            //   ),
+            // ),
+          ],
         ),
       );
 
@@ -331,6 +470,18 @@ class _ChatListState extends State<ChatList>
 
   Widget _newMessageBuilder(int index, Animation<double> animation) {
     try {
+      //これコメント外すとexceptions発生する
+      // var item;
+      // final isFirstItem = index == 0;
+      // if (isFirstItem) {
+      //   return Container(
+      //     height: MediaQuery.of(context).size.height,
+      //     color: Colors.lightBlue,
+      //     child: widget.painter,
+      //   );
+      // } else {
+      //   item = _oldData[index - 1];
+      // }
       final item = _oldData[index];
 
       return SizeTransition(
@@ -374,9 +525,11 @@ class _ChatListState extends State<ChatList>
             // size after new message was added
             Future.delayed(const Duration(milliseconds: 100), () {
               if (widget.scrollController.hasClients) {
+                print('widget.scrollController.hasClients');
                 widget.scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 200),
+                  MediaQuery.of(context).size.height,
+                  //0,
+                  duration: const Duration(milliseconds: 100),
                   curve: Curves.easeInQuad,
                 );
               }

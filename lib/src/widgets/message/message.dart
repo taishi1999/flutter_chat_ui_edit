@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:visibility_detector/visibility_detector.dart';
 
+import '../../../flutter_chat_ui.dart';
 import '../../models/bubble_rtl_alignment.dart';
 import '../../models/emoji_enlargement_behavior.dart';
 import '../../util.dart';
@@ -179,6 +180,8 @@ class Message extends StatelessWidget {
     final query = MediaQuery.of(context);
     final user = InheritedUser.of(context).user;
     final currentUserIsAuthor = user.id == message.author.id;
+    // print('user.id: ${user.id}');
+    // print('message.author.id: ${message.author.id}');
     final enlargeEmojis =
         emojiEnlargementBehavior != EmojiEnlargementBehavior.never &&
             message is types.TextMessage &&
@@ -186,47 +189,50 @@ class Message extends StatelessWidget {
               emojiEnlargementBehavior,
               message as types.TextMessage,
             );
-    final messageBorderRadius =
-        InheritedChatTheme.of(context).theme.messageBorderRadius;
-    final borderRadius = bubbleRtlAlignment == BubbleRtlAlignment.left
-        ? BorderRadiusDirectional.only(
-            bottomEnd: Radius.circular(
-              !currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
-            ),
-            bottomStart: Radius.circular(
-              currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
-            ),
-            topEnd: Radius.circular(messageBorderRadius),
-            topStart: Radius.circular(messageBorderRadius),
-          )
-        : BorderRadius.only(
-            bottomLeft: Radius.circular(
-              currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
-            ),
-            bottomRight: Radius.circular(
-              !currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
-            ),
-            topLeft: Radius.circular(messageBorderRadius),
-            topRight: Radius.circular(messageBorderRadius),
-          );
+    // final messageBorderRadius =
+    //     InheritedChatTheme.of(context).theme.messageBorderRadius;
+    // final borderRadius = bubbleRtlAlignment == BubbleRtlAlignment.left
+    //     ? BorderRadiusDirectional.only(
+    //         bottomEnd: Radius.circular(
+    //           !currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
+    //         ),
+    //         bottomStart: Radius.circular(
+    //           currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
+    //         ),
+    //         topEnd: Radius.circular(messageBorderRadius),
+    //         topStart: Radius.circular(messageBorderRadius),
+    //       )
+    //     : BorderRadius.only(
+    //         bottomLeft: Radius.circular(
+    //           currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
+    //         ),
+    //         bottomRight: Radius.circular(
+    //           !currentUserIsAuthor || roundBorder ? messageBorderRadius : 0,
+    //         ),
+    //         topLeft: Radius.circular(messageBorderRadius),
+    //         topRight: Radius.circular(messageBorderRadius),
+    //       );
 
     return Container(
+      //color: Colors.grey,
       alignment: bubbleRtlAlignment == BubbleRtlAlignment.left
           ? currentUserIsAuthor
+              //? AlignmentDirectional.centerEnd
               ? AlignmentDirectional.centerEnd
               : AlignmentDirectional.centerStart
           : currentUserIsAuthor
-              ? Alignment.centerRight
+              //? Alignment.centerRight
+              ? Alignment.centerLeft
               : Alignment.centerLeft,
       margin: bubbleRtlAlignment == BubbleRtlAlignment.left
           ? EdgeInsetsDirectional.only(
-              bottom: 4,
+              bottom: 0,
               end: isMobile ? query.padding.right : 0,
-              start: 20 + (isMobile ? query.padding.left : 0),
+              start: 16 + (isMobile ? query.padding.left : 0),
             )
           : EdgeInsets.only(
-              bottom: 4,
-              left: 20 + (isMobile ? query.padding.left : 0),
+              bottom: 0,
+              left: 16 + (isMobile ? query.padding.left : 0),
               right: isMobile ? query.padding.right : 0,
             ),
       child: Row(
@@ -236,7 +242,8 @@ class Message extends StatelessWidget {
             ? null
             : TextDirection.ltr,
         children: [
-          if (!currentUserIsAuthor && showUserAvatars) _avatarBuilder(),
+          //if (!currentUserIsAuthor && showUserAvatars) _avatarBuilder(),
+          if (showUserAvatars) _avatarBuilder(),
           ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: messageWidth.toDouble(),
@@ -258,14 +265,14 @@ class Message extends StatelessWidget {
                           ),
                           child: _bubbleBuilder(
                             context,
-                            borderRadius.resolve(Directionality.of(context)),
+                            //borderRadius.resolve(Directionality.of(context)),
                             currentUserIsAuthor,
                             enlargeEmojis,
                           ),
                         )
                       : _bubbleBuilder(
                           context,
-                          borderRadius.resolve(Directionality.of(context)),
+                          //borderRadius.resolve(Directionality.of(context)),
                           currentUserIsAuthor,
                           enlargeEmojis,
                         ),
@@ -300,11 +307,11 @@ class Message extends StatelessWidget {
             imageHeaders: imageHeaders,
             onAvatarTap: onAvatarTap,
           )
-      : const SizedBox(width: 40);
+      : const SizedBox(width: 48);
 
   Widget _bubbleBuilder(
     BuildContext context,
-    BorderRadius borderRadius,
+    //BorderRadius borderRadius,
     bool currentUserIsAuthor,
     bool enlargeEmojis,
   ) =>
@@ -318,14 +325,15 @@ class Message extends StatelessWidget {
               ? _messageBuilder()
               : Container(
                   decoration: BoxDecoration(
-                    borderRadius: borderRadius,
-                    color: !currentUserIsAuthor ||
-                            message.type == types.MessageType.image
-                        ? InheritedChatTheme.of(context).theme.secondaryColor
-                        : InheritedChatTheme.of(context).theme.primaryColor,
-                  ),
+                      //borderRadius: borderRadius,
+                      //color: !currentUserIsAuthor || message.type == types.MessageType.image
+                      //textの吹き出しの色
+                      //color: InheritedChatTheme.of(context).theme.secondaryColor,
+                      // ? InheritedChatTheme.of(context).theme.secondaryColor
+                      // : InheritedChatTheme.of(context).theme.primaryColor,
+                      ),
                   child: ClipRRect(
-                    borderRadius: borderRadius,
+                    //borderRadius: borderRadius,
                     child: _messageBuilder(),
                   ),
                 );
@@ -371,7 +379,8 @@ class Message extends StatelessWidget {
                 nameBuilder: nameBuilder,
                 onPreviewDataFetched: onPreviewDataFetched,
                 options: textMessageOptions,
-                showName: showName,
+                //showName: showName,
+                showName: true,
                 usePreviewData: usePreviewData,
                 userAgent: userAgent,
               );
