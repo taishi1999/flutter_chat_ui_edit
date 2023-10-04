@@ -16,6 +16,8 @@ import 'package:uuid/uuid.dart';
 
 //import 'package:flutter_chat_ui_editor/painter.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 void main() {
   initializeDateFormatting().then((_) => runApp(const MyApp()));
 }
@@ -58,7 +60,8 @@ class _ChatPageState extends State<ChatPage> {
                 //   image: AssetImage('assets/icon-undo.png'),
                 //   color: Colors.black,
                 // ),
-                leading: Image.asset('assets/icon-pen.png'),
+                leading: SvgPicture.asset('assets/arrow_left.svg'),
+                //leading: Image.asset('assets/icon-arrow.png'),
                 backgroundColor: neutral0,
                 title: const Text('friends'),
               )

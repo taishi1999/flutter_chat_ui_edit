@@ -329,23 +329,39 @@ class PainterController extends ChangeNotifier {
   /// 保存用情報を取得.
   Map<String, dynamic> toMap() {
     late double lowestPathPoint = 0;
+    late double highestPathPoint = double.infinity;
+    for (var i = 0; i < _pathHistory._paths.length; i++) {
+      final paint = _pathHistory._paths[i].value;
+      for (final offset in _pathHistory._offsets[i]) {
+        if (offset.dy - paint.strokeWidth / 2 < highestPathPoint) {
+          highestPathPoint =
+              offset.dy - paint.strokeWidth / 2; // より小さい値が見つかれば更新
+        }
+        //下向きの高さの最大値
+        if (lowestPathPoint < offset.dy + paint.strokeWidth / 2) {
+          lowestPathPoint = offset.dy + paint.strokeWidth / 2;
+        }
+      }
+    }
+
     final listResult = [];
     for (var i = 0; i < _pathHistory._paths.length; i++) {
       final paint = _pathHistory._paths[i].value;
       final listType = ListType(paint);
       for (final offset in _pathHistory._offsets[i]) {
         listType.addOffset(offset);
-
-        if (lowestPathPoint < offset.dy) {
-          lowestPathPoint = offset.dy + paint.strokeWidth + 8;
-        }
+        // if (offset.dy - paint.strokeWidth / 2 < highestPathPoint) {
+        //   highestPathPoint =
+        //       offset.dy - paint.strokeWidth / 2; // より小さい値が見つかれば更新
+        // }
       }
-      listResult.add(listType.toMap());
+
+      listResult.add(listType.toMap(highestPathPoint));
     }
 
     /// 高さを↑で計算して↓でセット.
     return {
-      'height': lowestPathPoint,
+      'height': lowestPathPoint - highestPathPoint + 16,
       'list': listResult,
     };
   }
@@ -513,10 +529,10 @@ class ListType {
     _offsetList.add(ListTypeOffset(offset));
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toMap(double highestPathPoint) {
     final offsetMap = [];
     for (var offset in _offsetList) {
-      offsetMap.add(offset.toMap());
+      offsetMap.add(offset.toMap(highestPathPoint));
     }
     return {
       'paint': _paint!.toMap(),
@@ -601,5 +617,6 @@ class ListTypeOffset {
 
   Offset toOffset() => Offset(_dx, _dy);
 
-  Map<String, double> toMap() => {'dx': _dx, 'dy': _dy};
+  Map<String, double> toMap(double highestPathPoint) =>
+      {'dx': _dx, 'dy': _dy - highestPathPoint + 8};
 }

@@ -115,13 +115,13 @@ class _ChatListState extends State<ChatList>
   @override
   void initState() {
     super.initState();
-    // widget.scrollController.addListener(() {
-    //   setState(() {
-    //     _topOffset = widget.scrollController.offset;
-    //     widget.setScrollPosition(_topOffset);
-    //     //print('topOffset: $_topOffset');
-    //   });
-    // });
+    widget.scrollController.addListener(() {
+      setState(() {
+        _topOffset = widget.scrollController.offset;
+        widget.setScrollPosition(_topOffset);
+        //print('topOffset: $_topOffset');
+      });
+    });
 
     //WidgetsBinding.instance.addPostFrameCallback((_) {
     // widget.scrollController.animateTo(
@@ -154,6 +154,12 @@ class _ChatListState extends State<ChatList>
   void dispose() {
     //_controller.dispose();
     super.dispose();
+  }
+
+  final Map<int, GlobalKey> keyMap = {};
+
+  GlobalKey generateKey(int index) {
+    return GlobalKey(debugLabel: 'key_$index');
   }
 
   @override
@@ -210,35 +216,35 @@ class _ChatListState extends State<ChatList>
               controller: widget.scrollController,
               reverse: true,
               slivers: [
-                SliverToBoxAdapter(
-                  child: Container(
-                    //height: 300,
-                    height: MediaQuery.of(context).size.height,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      // border: Border(
-                      //   top: BorderSide(
-                      //     //color: Colors.black,
-                      //     color: Colors.black.withOpacity(.2),
-                      //     width: 1.0,
-                      //   ),
-                      // ),
-                    ),
-                    //color: Colors.blue,
-                    child: widget.isPenPressed ? widget.painter : null,
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  key: _emptyListKey,
-                  child: widget.previewMessageBuilder(),
-                ),
-                SliverToBoxAdapter(
-                  child: Container(
-                    height: 100,
-                    color: Colors.grey[900],
-                    //key: _emptyListKey,
-                  ),
-                ),
+                // SliverToBoxAdapter(
+                //   child: Stack(
+                //     children: [
+                //       Align(
+                //         alignment: Alignment.topCenter,
+                //         child: Padding(
+                //           padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                //           child: ClipRRect(
+                //             borderRadius: BorderRadius.circular(10), // 丸みの半径を設定
+                //             child: Container(
+                //               height: 2.0, // ボーダーの厚さ
+                //               //width: MediaQuery.of(context).size.width *0.9, // ボーダーの横幅を70%に設定
+                //               color: Colors.grey.shade200, // ボーダーの色
+                //             ),
+                //           ),
+                //         ),
+                //       ),
+                //       Column(
+                //         children: [
+                //           widget.previewMessageBuilder(),
+                //           Container(
+                //             height: MediaQuery.of(context).size.height,
+                //           ),
+                //         ],
+                //       ),
+                //     ],
+                //   ),
+                // ),
+
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (_, index) {
@@ -253,6 +259,23 @@ class _ChatListState extends State<ChatList>
                   key: _listKey,
                 ),
               ],
+            ),
+            Positioned(
+              top: 0, // Container's position
+              child: Container(
+                width: MediaQuery.of(context).size.width,
+                height: 200, // Container's height
+                color: Colors.black.withOpacity(0.5),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: ElevatedButton(
+                onPressed: () {
+                  _getVisibleItems();
+                },
+                child: Text('Button'),
+              ),
             ),
             // Positioned(
             //   top: -500 + _topOffset,
@@ -470,22 +493,13 @@ class _ChatListState extends State<ChatList>
 
   Widget _newMessageBuilder(int index, Animation<double> animation) {
     try {
-      //これコメント外すとexceptions発生する
-      // var item;
-      // final isFirstItem = index == 0;
-      // if (isFirstItem) {
-      //   return Container(
-      //     height: MediaQuery.of(context).size.height,
-      //     color: Colors.lightBlue,
-      //     child: widget.painter,
-      //   );
-      // } else {
-      //   item = _oldData[index - 1];
-      // }
       final item = _oldData[index];
 
+      final key = keyMap.putIfAbsent(index, () => generateKey(index));
+
       return SizeTransition(
-        key: _valueKeyForItem(item),
+        key: key,
+        //key: _valueKeyForItem(item),
         axisAlignment: -1,
         sizeFactor: animation.drive(CurveTween(curve: Curves.easeOutQuad)),
         child: widget.itemBuilder(item, index),
@@ -494,6 +508,67 @@ class _ChatListState extends State<ChatList>
       return const SizedBox();
     }
   }
+
+  void _getVisibleItems() {
+    late bool visibleSwitch = false;
+    for (var entry in keyMap.entries) {
+      final key = entry.value;
+      final index = entry.key;
+      final keyContext = key.currentContext;
+      if (keyContext == null) continue;
+
+      // Get the RenderBox and check its visibility
+      final box = keyContext.findRenderObject() as RenderBox;
+      final pos = box.localToGlobal(Offset.zero).dy;
+      final isVisible = 300 + 47 + 56 < pos && pos < 500 + 47 + 56;
+
+      //MediaQuery.of(keyContext).size.height;
+
+      //最後に範囲からはみ出た要素を取得するためにvisibleSwitchを使用
+      if (isVisible) {
+        visibleSwitch = true;
+        print("$index, dy: ${box.localToGlobal(Offset.zero).dy}");
+      } else {
+        if (visibleSwitch) {
+          print("Last visible item index: $index, dy: $pos");
+          visibleSwitch = false;
+        }
+      }
+    }
+  }
+
+  // void _getVisibleItems() {
+  //   final visibleItems = <Object>[];
+
+  //   for (final item in _oldData) {
+  //     final key = _globalKeyForItem(item);
+  //     //final key = _valueKeyForItem(item);
+  //     if (key == null) {
+  //       print('key = null');
+  //       continue;
+  //     }
+
+  //     final context = key.currentContext;
+  //     if (context == null) {
+  //       print('context = null');
+  //       continue;
+  //     }
+
+  //     final renderBox = context.findRenderObject() as RenderBox;
+  //     final position = renderBox.localToGlobal(Offset.zero);
+  //     final size = renderBox.size;
+  //     print('renderBox: $renderBox');
+  //     print('item: $item,');
+  //     //print('size: ${size}, position: ${position}');
+
+  //     if (position.dy < MediaQuery.of(context).size.height &&
+  //         position.dy + size.height > 0) {
+  //       visibleItems.add(item);
+  //     }
+  //   }
+
+  //   print('Visible items: $visibleItems');
+  // }
 
   Widget _removedMessageBuilder(Object item, Animation<double> animation) =>
       SizeTransition(
@@ -545,10 +620,15 @@ class _ChatListState extends State<ChatList>
   Key? _valueKeyForItem(Object item) =>
       _mapMessage(item, (message) => ValueKey(message.id));
 
+  GlobalKey? _globalKeyForItem(Object item) =>
+      _mapMessage(item, (message) => GlobalKey(debugLabel: message.id));
+
   T? _mapMessage<T>(Object maybeMessage, T Function(types.Message) f) {
     if (maybeMessage is Map<String, Object>) {
+      print('Item is a Map');
       return f(maybeMessage['message'] as types.Message);
     }
+    print('Item is not a Map<String, Object>. Returning null.');
     return null;
   }
 }

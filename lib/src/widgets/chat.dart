@@ -546,25 +546,7 @@ class ChatState extends State<Chat> {
     });
   }
 
-  // お絵描き用Painter
-  // Positioned _displayPainter() => Positioned(
-  //       // TODO:位置サイズどうする？.
-  //       top: 0,
-  //       left: 0,
-  //       width: 500,
-  //       height: 1000,
-  //       child: IgnorePointer(child: Container()),
-  //       // child: Painter(
-  //       //   painterController: _controller,
-  //       //   onPanStart: _onPanStart,
-  //       //   onPanEnd: _onPanEnd,
-  //       //   // isLoadOnly: true,
-  //       // ),
-  //     );
-
   Container _displayPainter() => Container(
-        // TODO:位置サイズどうする？.
-        //height: 1000,
         child: Painter(
           painterController: _controller,
           onPanStart: _onPanStart,
@@ -595,9 +577,12 @@ class ChatState extends State<Chat> {
                   color: widget.theme.backgroundColor,
                   child: Column(
                     children: [
+                      //チャットが空白の時に表示させる
                       // SizedBox.expand(
                       //   child: _emptyStateBuilder(),
                       // ),
+
+                      //チャット
                       Flexible(
                         child: Stack(
                           children: [
@@ -646,12 +631,25 @@ class ChatState extends State<Chat> {
                                 ),
                               ),
                             ),
-                            // ConstrainedBox(
-                            //     constraints: BoxConstraints(
-                            //       minWidth: 200, // Set the minimum width
-                            //       maxWidth: 200, // Set the maximum width
-                            //     ),
-                            //     child: widget.penIcon ?? Container()),
+                            Positioned(
+                              top: 300, // Container's position
+                              child: Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 200, // Container's height
+                                color: Colors.black.withOpacity(0.5),
+                              ),
+                            ),
+
+                            //お絵描き機能
+                            Visibility(
+                              visible: _isPainterVisible,
+                              child: Container(
+                                height: MediaQuery.of(context).size.height,
+                                child: _displayPainter(),
+                              ),
+                            ),
+
+                            // カラーピッカー
                             Visibility(
                               visible: inputText != ' ' && !_isPainterVisible,
                               child: colorPicker('text'),
@@ -659,6 +657,10 @@ class ChatState extends State<Chat> {
                           ],
                         ),
                       ),
+
+                      //インプット
+                      // Opacity(
+                      //   opacity: _isPainterVisible ? 0.0 : 1,
                       Visibility(
                         visible: !_isPainterVisible,
                         child: Column(
@@ -715,77 +717,13 @@ class ChatState extends State<Chat> {
                   child: SafeArea(
                     child: Stack(
                       children: [
-                        // AnimatedContainer(
-                        //     duration: const Duration(milliseconds: 300),
-                        //     padding: EdgeInsets.only(right: _isChange ? 0 : 15),
-                        //     width: _isChange ? 39 : 10,
-                        //     height: 300,
-                        //     child: CustomPaint(
-                        //       painter: RPSCustomPainter(),
-                        //       // size: Size(screenUtil.screenHeight,
-                        //       //     (screenUtil.screenWidth).toDouble()),
-                        //     )),
-                        // AnimatedContainer(
-                        //   padding: EdgeInsets.only(
-                        //       left: _isChange ? 1 : 1, right: 2.1),
-                        //   duration: const Duration(milliseconds: 300),
-                        //   width: _isChange ? 39 : 15,
-                        //   height: 300,
-                        //   decoration: const BoxDecoration(),
-                        //   child: RotatedBox(
-                        //     quarterTurns: 3,
-                        //     child: Stack(
-                        //       alignment: Alignment.center,
-                        //       children: [
-                        //         AnimatedContainer(
-                        //           duration: const Duration(milliseconds: 300),
-                        //           width: 250,
-                        //           height: !_showIndicator ? 2 : 0,
-                        //           decoration: BoxDecoration(
-                        //               color: !_showIndicator
-                        //                   ? Colors.white.withOpacity(0.2)
-                        //                   : Colors.transparent,
-                        //               borderRadius: BorderRadius.circular(30)),
-                        //         ),
-                        //         Padding(
-                        //           padding: _isChange
-                        //               ? const EdgeInsets.only(top: 2)
-                        //               : const EdgeInsets.all(0),
-                        //           child: Slider(
-                        //             value: 5,
-                        //             min: 1,
-                        //             max: 20,
-                        //             activeColor: Colors.transparent,
-                        //             thumbColor: Colors.white,
-                        //             inactiveColor: Colors.transparent,
-                        //             onChanged: (value) {
-                        //               null;
-                        //             },
-                        //             onChangeStart: (start) {
-                        //               setState(() {
-                        //                 _isChange = true;
-                        //                 _showIndicator = true;
-                        //               });
-                        //             },
-                        //             onChangeEnd: (end) {
-                        //               setState(() {
-                        //                 _isChange = false;
-                        //                 _showIndicator = false;
-                        //               });
-                        //             },
-                        //           ),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // ),
-
+                        //キャンセル、完了、undo&redo
                         Center(
                           child: Column(
                             children: [
                               AnimatedOpacity(
-                                opacity: 1,
-                                //opacity: isTouching ? 0.0 : 1.0,
+                                //opacity: 1,
+                                opacity: isTouching ? 0.0 : 1.0,
                                 duration: Duration(milliseconds: 150),
                                 child: Align(
                                   alignment: Alignment.topCenter,
@@ -817,9 +755,9 @@ class ChatState extends State<Chat> {
                                             widget.onPenPressed?.call();
                                             var position =
                                                 _scrollController.offset;
-                                            _scrollController.jumpTo(
-                                              position + 128,
-                                            );
+                                            // _scrollController.jumpTo(
+                                            //   position + 128,
+                                            // );
                                           },
                                           child: Text(
                                             'キャンセル',
@@ -843,7 +781,13 @@ class ChatState extends State<Chat> {
                                                 icon: widget.undoIcon != null
                                                     ? widget.undoIcon!(
                                                         _controller.isEmpty)
-                                                    : Container(),
+                                                    : Icon(
+                                                        Icons.undo_rounded,
+                                                        color:
+                                                            _controller.isEmpty
+                                                                ? Colors.grey
+                                                                : Colors.white,
+                                                      ),
                                                 //  icon: widget.undoIcon != null
                                                 //     ? Image(
                                                 //         image: widget.undoIcon!,
@@ -900,8 +844,15 @@ class ChatState extends State<Chat> {
                                                   child: widget.undoIcon != null
                                                       ? widget.undoIcon!(
                                                           _controller
-                                                              .isUndoPathEmpty)
-                                                      : Container(),
+                                                              .isUndoPathEmpty,
+                                                        )
+                                                      : Icon(
+                                                          Icons.undo_rounded,
+                                                          color: _controller
+                                                                  .isUndoPathEmpty
+                                                              ? Colors.grey
+                                                              : Colors.white,
+                                                        ),
                                                 ),
                                                 // icon: widget.undoIcon != null
                                                 //     ? Image(
@@ -970,7 +921,8 @@ class ChatState extends State<Chat> {
                                                   _onPenPressed();
                                                   _show();
                                                   widget.onPenPressed?.call(
-                                                      _controller.toMap());
+                                                    _controller.toMap(),
+                                                  );
 
                                                   //_controller.finish();
                                                   _controller.clear();
@@ -1005,31 +957,7 @@ class ChatState extends State<Chat> {
                             ],
                           ),
                         ),
-                        // StatefulBuilder(builder:
-                        //     (BuildContext context, StateSetter setState) {
-                        //   return RotatedBox(
-                        //     quarterTurns: 3,
-                        //     child: Align(
-                        //       alignment: Alignment.topCenter,
-                        //       child: Container(
-                        //         height: 15,
-                        //         width: 200,
-                        //         //color: Colors.green,
-                        //         child: Slider(
-                        //           value: _controller.thickness,
-                        //           onChanged: (double value) => setState(() {
-                        //             _controller.thickness = value;
-                        //           }),
-                        //           min: 2.0,
-                        //           max: 25.0,
-                        //           activeColor: Colors.black.withOpacity(0.4),
-                        //           inactiveColor: Colors.black.withOpacity(0.2),
-                        //           thumbColor: Colors.grey,
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   );
-                        // }),
+                        //太さ
                         AnimatedTriangle(
                           defaultValue: 6,
                           maxValue: 12,
@@ -1040,7 +968,7 @@ class ChatState extends State<Chat> {
                             });
                           },
                         ),
-
+                        //カラーピッカー
                         AnimatedOpacity(
                           opacity: isTouching ? 0.0 : 1.0,
                           duration: Duration(milliseconds: 150),
@@ -1058,52 +986,6 @@ class ChatState extends State<Chat> {
                     onClosePressed: _onCloseGalleryPressed,
                     options: widget.imageGalleryOptions,
                   ),
-                // AnimatedContainer(
-                //     duration: const Duration(milliseconds: 300),
-                //     padding: EdgeInsets.only(right: 15),
-                //     width: 39,
-                //     height: 300,
-                //     child: CustomPaint(
-                //       painter: RPSCustomPainter(),
-                //       //size: Size(screenUtil.screenHeight,(screenUtil.screenWidth).toDouble()),
-                //     )),
-                // AnimatedContainer(
-                //   padding: EdgeInsets.only(left: 1, right: 2.1),
-                //   duration: const Duration(milliseconds: 300),
-                //   width: 39,
-                //   height: 300,
-                //   decoration: const BoxDecoration(),
-                //   child: RotatedBox(
-                //     quarterTurns: 3,
-                //     child: Stack(
-                //       alignment: Alignment.center,
-                //       children: [
-                //         AnimatedContainer(
-                //           duration: const Duration(milliseconds: 300),
-                //           width: 250,
-                //           height: 2,
-                //           decoration: BoxDecoration(
-                //               color: Colors.white.withOpacity(0.2),
-                //               borderRadius: BorderRadius.circular(30)),
-                //         ),
-                //         Padding(
-                //           padding: const EdgeInsets.only(top: 2),
-                //           child: Slider(
-                //             value: 1,
-                //             min: 1,
-                //             max: 20,
-                //             activeColor: Colors.transparent,
-                //             thumbColor: Colors.white,
-                //             inactiveColor: Colors.transparent,
-                //             onChanged: null,
-                //             onChangeStart: null,
-                //             onChangeEnd: null,
-                //           ),
-                //         ),
-                //       ],
-                //     ),
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -1234,17 +1116,21 @@ class ChatState extends State<Chat> {
       return widget.dateHeaderBuilder?.call(object) ??
           Container(
             alignment: Alignment.center,
-            color: Colors.amber,
-            margin: widget.theme.dateDividerMargin,
+            //color: Colors.amber,
+            padding: widget.theme.dateDividerMargin,
             child: Text(
               object.text,
               style: widget.theme.dateDividerTextStyle,
             ),
           );
     } else if (object is MessageSpacer) {
-      return SizedBox(
+      return Container(
+        color: Colors.blue,
         height: object.height,
       );
+      // return SizedBox(
+      //   height: object.height,
+      // );
     } else if (object is UnreadHeaderData) {
       return AutoScrollTag(
         controller: _scrollController,
@@ -1311,6 +1197,8 @@ class ChatState extends State<Chat> {
           videoMessageBuilder: widget.videoMessageBuilder,
         );
       }
+
+      //ペイントなら
       if (message.metadata != null &&
           message.metadata![MessageMetadata.painter.name] != null) {
         // //新しくリストを作り追加
@@ -1326,7 +1214,7 @@ class ChatState extends State<Chat> {
           index: index ?? -1,
           key: Key('scroll-${message.id}'),
           child: Container(
-//            height: MediaQuery.of(context).size.height,
+            // height: MediaQuery.of(context).size.height,
             // metadataから取得した高さをセット 場所はここで良い？.
             height: loadPaintController.heightFromMapData,
             child: RepaintBoundary(
@@ -1394,12 +1282,13 @@ class ChatState extends State<Chat> {
       onMessageStatusLongPress: widget.onMessageStatusLongPress,
       onMessageStatusTap: widget.onMessageStatusTap,
       onMessageTap: (context, tappedMessage) {
-        if (tappedMessage is types.ImageMessage &&
-            widget.disableImageGallery != true) {
-          _onImagePressed(tappedMessage);
-        }
-        print('tappedMessage: $tappedMessage.type');
-        widget.onMessageTap?.call(context, tappedMessage);
+        //previewなので何もしない
+        // if (tappedMessage is types.ImageMessage &&
+        //     widget.disableImageGallery != true) {
+        //   _onImagePressed(tappedMessage);
+        // }
+        // print('tappedMessage: $tappedMessage.type');
+        // widget.onMessageTap?.call(context, tappedMessage);
       },
       onMessageVisibilityChanged: widget.onMessageVisibilityChanged,
       onPreviewDataFetched: _onPreviewDataFetched,
@@ -1466,22 +1355,23 @@ class ChatState extends State<Chat> {
     //   ));
     // });
 
-    //if　scrollpositionが
-    var position = _scrollController.offset;
-    //print('position: $position');
-    if (position >= MediaQuery.of(context).size.height) {
-      var s = MediaQuery.of(context).padding.top;
-      print('MediaQuery.of(context).padding.top: $s');
-      _scrollController.animateTo(
-        56 + 0 + 24 + 0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInQuad,
-      );
-    } else {
-      _scrollController.jumpTo(
-        position - 64,
-      );
-    }
+    //ペンボタンタップ時にスクロール
+    // var position = _scrollController.offset;
+    // //print('position: $position');
+    // if (position >= MediaQuery.of(context).size.height) {
+    //   var s = MediaQuery.of(context).padding.top;
+    //   print('MediaQuery.of(context).padding.top: $s');
+    //   _scrollController.animateTo(
+    //     56 + 0 + 24 + 0,
+    //     duration: const Duration(milliseconds: 300),
+    //     curve: Curves.easeInQuad,
+    //   );
+    // } else {
+    //   _scrollController.jumpTo(
+    //     position - 64,
+    //   );
+    // }
+
     // _scrollController.animateTo(
     //   128,
     //   duration: const Duration(milliseconds: 300),
@@ -1493,7 +1383,6 @@ class ChatState extends State<Chat> {
       //_isInputVisible = !_isInputVisible;
     });
     //widget.onPenPressed;
-    print('_isPainterVisible: $_isPainterVisible');
   }
 
   void _show() {

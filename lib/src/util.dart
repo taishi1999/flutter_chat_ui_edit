@@ -234,8 +234,8 @@ List<Object> calculateChatMessages(
         ),
       );
     }
-
-    if (nextMessageDifferentDay || nextMessageDateThreshold) {
+    //if (nextMessageDifferentDay || nextMessageDateThreshold) {
+    if (nextMessageDifferentDay) {
       chatMessages.insert(
         0,
         DateHeader(

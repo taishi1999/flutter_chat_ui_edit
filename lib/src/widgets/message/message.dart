@@ -215,6 +215,10 @@ class Message extends StatelessWidget {
 
     return Container(
       //color: Colors.grey,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.red),
+        //borderRadius: BorderRadius.circular(10),
+      ),
       alignment: bubbleRtlAlignment == BubbleRtlAlignment.left
           ? currentUserIsAuthor
               //? AlignmentDirectional.centerEnd

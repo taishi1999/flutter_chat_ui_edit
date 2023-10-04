@@ -42,18 +42,19 @@ class PenButton extends StatelessWidget {
             minHeight: 24,
             minWidth: 24,
           ),
-          icon: isLoading
-              ? SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    backgroundColor: Colors.transparent,
-                    strokeWidth: 1.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      InheritedChatTheme.of(context).theme.inputTextColor,
-                    ),
-                  ),
-                )
+          icon
+              // icon: isLoading
+              // ? SizedBox(
+              //     height: 20,
+              //     width: 20,
+              //     child: CircularProgressIndicator(
+              //       backgroundColor: Colors.transparent,
+              //       strokeWidth: 1.5,
+              //       valueColor: AlwaysStoppedAnimation<Color>(
+              //         InheritedChatTheme.of(context).theme.inputTextColor,
+              //       ),
+              //     ),
+              //   )
               //: InheritedChatTheme.of(context).theme.attachmentButtonIcon ??
 
               // Icon(
@@ -67,7 +68,11 @@ class PenButton extends StatelessWidget {
               //   //package: 'flutter_chat_ui_edit',
               // ),
 
-              : penIcon ?? Container(),
+              : penIcon ??
+                  const Icon(
+                    Icons.create_outlined,
+                    color: Colors.white,
+                  ),
 
           // Image.asset(
           //   //'assets/icon-pen.png',

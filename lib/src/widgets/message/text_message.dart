@@ -72,11 +72,11 @@ class TextMessage extends StatelessWidget {
       final matches = urlRegexp.allMatches(message.text);
 
       if (matches.isNotEmpty) {
-        print('matches.isNotEmpty');
+        //print('matches.isNotEmpty');
 
         //return _linkPreview(user, width, context);
       } else {
-        print('matches.isEmpty');
+        //print('matches.isEmpty');
       }
     }
 

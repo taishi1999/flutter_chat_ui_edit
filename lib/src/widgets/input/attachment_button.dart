@@ -42,20 +42,25 @@ class AttachmentButton extends StatelessWidget {
             minHeight: 24,
             minWidth: 24,
           ),
-          icon: isLoading
-              ? SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    backgroundColor: Colors.transparent,
-                    strokeWidth: 1.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      InheritedChatTheme.of(context).theme.inputTextColor,
-                    ),
-                  ),
-                )
+          icon
+              // icon: isLoading
+              //     ? SizedBox(
+              //         height: 20,
+              //         width: 20,
+              //         child: CircularProgressIndicator(
+              //           backgroundColor: Colors.transparent,
+              //           strokeWidth: 1.5,
+              //           valueColor: AlwaysStoppedAnimation<Color>(
+              //             InheritedChatTheme.of(context).theme.inputTextColor,
+              //           ),
+              //         ),
+              //       )
               //: InheritedChatTheme.of(context).theme.attachmentButtonIcon ??
-              : imageIcon ?? Container(),
+              : imageIcon ??
+                  const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: Colors.white,
+                  ),
 
           // Image.asset(
           //   'assets/icon-attachment.png',
